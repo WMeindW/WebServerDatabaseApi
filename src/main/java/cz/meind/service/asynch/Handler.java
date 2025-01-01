@@ -61,8 +61,8 @@ public class Handler {
                 Application.logger.info(Handler.class, "Handling request: " + request);
                 if (request.getPath().endsWith("/")) request.setPath(request.getPath() + "index.html");
                 Response response = new Response(request.getPath(), client.getOutputStream());
-                Application.logger.info(Handler.class, "Handling response: " + response);
                 response.respond();
+                Application.logger.info(Handler.class, "Handling response: " + response);
                 Application.monitor.addRecord(new MonitoringRecord(false, id, System.currentTimeMillis() - start, request.getPath()));
                 client.close();
             } catch (Exception e) {

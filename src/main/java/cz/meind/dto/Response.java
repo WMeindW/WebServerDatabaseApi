@@ -3,6 +3,8 @@ package cz.meind.dto;
 import cz.meind.application.Application;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Represents a HTTP response to be sent to the client.
@@ -48,7 +50,11 @@ public class Response {
      */
     @Override
     public String toString() {
-        return "Response{out=" + out + '}';
+        return "Response{" +
+                "out=" + out +
+                ", path='" + path + '\'' +
+                ", code='" + code + '\'' +
+                '}';
     }
 
     /**
@@ -61,6 +67,7 @@ public class Response {
      */
     public void respond() throws IOException {
         File file = new File(Application.publicFilePath + "/" + path);
+
         if (file.exists() && !file.isDirectory()) {
             FileInputStream fileInputStream = new FileInputStream(file);
             PrintWriter headerWriter = new PrintWriter(out, true);
@@ -76,6 +83,24 @@ public class Response {
                 out.write(buffer, 0, bytesRead);
             }
 
+        } else if (Application.context.getRoute(path) != null) {
+            Method method = Application.context.getRoute(path);
+            String html;
+            try {
+                html = method.invoke(method.getDeclaringClass().getDeclaredConstructor().newInstance()).toString();
+                code = "200 OK";
+            } catch (IllegalAccessException | InvocationTargetException | InstantiationException |
+                     NoSuchMethodException e) {
+                Application.logger.error(Response.class, e);
+                html = e.toString();
+                code = "500 Internal Server Error";
+            }
+            PrintWriter headerWriter = new PrintWriter(out, true);
+            headerWriter.println("HTTP/1.1 " + code);
+            headerWriter.println("Content-Type: text/plain");
+            headerWriter.println("Server-Name: " + Application.serverName);
+            headerWriter.println();
+            headerWriter.println(html);
         } else {
             PrintWriter headerWriter = new PrintWriter(out, true);
             headerWriter.println("HTTP/1.1 404 Not Found");
