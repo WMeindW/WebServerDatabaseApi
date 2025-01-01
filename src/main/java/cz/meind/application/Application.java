@@ -1,5 +1,6 @@
 package cz.meind.application;
 
+import cz.meind.database.DatabaseContext;
 import cz.meind.logger.Logger;
 import cz.meind.service.ContextLoader;
 import cz.meind.service.Monitoring;
@@ -13,6 +14,8 @@ import java.util.Properties;
 
 public class Application {
     public static ContextLoader context;
+
+    public static DatabaseContext database;
 
     public static Logger logger;
 
@@ -38,6 +41,12 @@ public class Application {
 
     public static String mimesPath = "src/main/resources/mimes.properties";
 
+    public static String dbUrl = "jdbc:mysql://localhost:3306/andrem";
+
+    public static String dbUser = "root";
+
+    public static String dbPassword = "password";
+
     /**
      * Initializes and starts the application components including the logger, configuration,
      * daemon thread, and server.
@@ -49,6 +58,7 @@ public class Application {
         initializeLogger();
         initializeConfig(args);
         initializeContext();
+        initializeDatabaseProfile();
         initializeDaemon();
         initializeServer();
     }
@@ -56,6 +66,11 @@ public class Application {
     private static void initializeContext() {
         Application.logger.info(Application.class, "Initializing context loader.");
         context = new ContextLoader();
+    }
+
+    private static void initializeDatabaseProfile() {
+        Application.logger.info(Application.class, "Initializing database profile.");
+        database = new DatabaseContext();
     }
 
     /**
@@ -118,6 +133,9 @@ public class Application {
             publicFilePath = properties.getProperty("server.public.file.path");
             serverName = properties.getProperty("server.name");
             mimesPath = properties.getProperty("server.mimes.path");
+            dbUrl = properties.getProperty("database.url");
+            dbUser = properties.getProperty("database.user");
+            dbPassword = properties.getProperty("database.password");
             Application.logger.info(Application.class, "Found config at " + configFilePath);
             Application.logger.info(Application.class, properties.toString());
         } catch (Exception e) {
