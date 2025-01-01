@@ -21,7 +21,7 @@ public class Application {
 
     public static String configFilePath = "src/main/resources/application.properties";
 
-    public static String logFilePath = "/home/ubuntu/mandis/log/log.txt";
+    public static String logFilePath = "log/log.txt";
 
     public static int port = 8088;
 

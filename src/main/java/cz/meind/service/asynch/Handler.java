@@ -60,7 +60,7 @@ public class Handler {
             try {
                 Application.logger.info(Handler.class, "Handling request: " + request);
                 if (request.getPath().endsWith("/")) request.setPath(request.getPath() + "index.html");
-                Response response = new Response(new File((Application.publicFilePath + request.getPath())), client.getOutputStream());
+                Response response = new Response(request.getPath(), client.getOutputStream());
                 Application.logger.info(Handler.class, "Handling response: " + response);
                 response.respond();
                 Application.monitor.addRecord(new MonitoringRecord(false, id, System.currentTimeMillis() - start, request.getPath()));

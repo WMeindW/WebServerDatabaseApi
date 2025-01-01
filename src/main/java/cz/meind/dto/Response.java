@@ -8,10 +8,9 @@ import java.io.*;
  * Represents a HTTP response to be sent to the client.
  */
 public class Response {
-    private final File file;
-
     private final OutputStream out;
 
+    private String path;
     private String code;
 
     /**
@@ -26,12 +25,11 @@ public class Response {
     /**
      * Constructs a new Response object.
      *
-     * @param file the file to be sent as part of the response
-     * @param out  the OutputStream to which the response will be written
+     * @param out the OutputStream to which the response will be written
      */
-    public Response(File file, OutputStream out) {
-        this.file = file;
+    public Response(String path, OutputStream out) {
         this.out = out;
+        this.path = path;
     }
 
     /**
@@ -50,7 +48,7 @@ public class Response {
      */
     @Override
     public String toString() {
-        return "Response{" + "file=" + file + ", out=" + out + '}';
+        return "Response{out=" + out + '}';
     }
 
     /**
@@ -62,6 +60,7 @@ public class Response {
      * @throws IOException if an I/O error occurs while sending the response
      */
     public void respond() throws IOException {
+        File file = new File(Application.publicFilePath + "/" + path);
         if (file.exists() && !file.isDirectory()) {
             FileInputStream fileInputStream = new FileInputStream(file);
             PrintWriter headerWriter = new PrintWriter(out, true);
