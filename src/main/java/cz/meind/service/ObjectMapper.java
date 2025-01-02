@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 public class ObjectMapper {
     private final Map<Class<?>, EntityMetadata> metadataRegistry = new HashMap<>();
     private final Connection connection;
@@ -27,21 +28,41 @@ public class ObjectMapper {
         metadataRegistry.put(clazz, metadata);
     }
 
-    // Save an entity to the database
-    public void save(Object entity) throws Exception {
+    public Integer save(Object entity) throws Exception {
         Class<?> clazz = entity.getClass();
         EntityMetadata metadata = metadataRegistry.get(clazz);
 
+        Field idField = getIdField(clazz);
+        if (idField == null) {
+            throw new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field");
+        }
+        idField.setAccessible(true);
+        if (Integer.parseInt(idField.get(entity).toString()) != 0) return  (Integer) idField.get(entity);
+
         StringBuilder sql = new StringBuilder("INSERT INTO ").append(metadata.getTableName()).append(" (");
         StringBuilder values = new StringBuilder(" VALUES (");
-
         List<Object> params = new ArrayList<>();
+
+        Map<String, Integer> relationFields = new HashMap<>();
+
+        for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
+            Field relationField = relations.getValue();
+            relationField.setAccessible(true);
+            Integer id = save(relationField.get(entity));
+            if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
+        }
+
         for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
             sql.append(columnEntry.getKey()).append(",");
             values.append("?,");
             Field field = getField(clazz, columnEntry.getValue());
             field.setAccessible(true);
             params.add(field.get(entity));
+        }
+        for (Map.Entry<String, Integer> rel : relationFields.entrySet()) {
+            values.append("?,");
+            sql.append(rel.getKey()).append(",");
+            params.add(rel.getValue());
         }
 
         sql.setLength(sql.length() - 1); // Remove trailing comma
@@ -52,39 +73,29 @@ public class ObjectMapper {
             for (int i = 0; i < params.size(); i++) {
                 stmt.setObject(i + 1, params.get(i));
             }
+            System.out.println(stmt);
             stmt.executeUpdate();
 
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    Field idField = getIdField(clazz);
-                    if (idField != null) {
-                        idField.setAccessible(true);
+                    idField.setAccessible(true);
 
-                        Object generatedKey = generatedKeys.getObject(1); // Get the generated key
-                        Class<?> idFieldType = idField.getType();         // Determine the field's type
+                    Object generatedKey = generatedKeys.getObject(1); // Get the generated key
+                    Class<?> idFieldType = idField.getType();         // Determine the field's type
 
-                        // Convert to the appropriate type if necessary
-                        if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
-                            Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
-                            Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
-                            idField.set(entity, convertedKey);
-                        } else {
-                            throw new IllegalArgumentException("Unsupported ID field type: " + idFieldType);
-                        }
+                    // Convert to the appropriate type if necessary
+                    if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
+                        Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
+                        Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
+                        idField.set(entity, convertedKey);
+                    } else {
+                        throw new IllegalArgumentException("Unsupported ID field type: " + idFieldType);
                     }
+                    return (Integer) idField.get(entity);
                 }
             }
         }
-
-        // Handle relationships
-        for (Map.Entry<String, Field> relationEntry : metadata.getRelations().entrySet()) {
-            Field relationField = relationEntry.getValue();
-            relationField.setAccessible(true);
-            Object relatedEntity = relationField.get(entity);
-            if (relatedEntity != null) {
-                save(relatedEntity); // Recursive save
-            }
-        }
+        return null;
     }
 
     // Fetch all entities of a given class
@@ -108,8 +119,9 @@ public class ObjectMapper {
                     relationField.setAccessible(true);
                     String relationType = relationEntry.getKey();
                     if (relationType.equals("ManyToOne")) {
-                        System.out.println(relationField.getType());
                         relationField.set(entity, fetchById(relationField.getType(), rs.getObject(relationField.getAnnotation(JoinColumn.class).name()).toString()));
+                    } else if (relationType.equals("ManyToMany")) {
+                        //CODE HERE
                     }
                 }
                 entities.add(entity);

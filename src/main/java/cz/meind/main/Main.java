@@ -21,7 +21,15 @@ public class Main {
         ObjectMapper mapper = new ObjectMapper(DriverManager.getConnection("jdbc:mysql://sql.daniellinda.net:3306/andrem", "remote", "hm3C4iLL+"));
         mapper.registerEntity(UserType.class);
         mapper.registerEntity(User.class);
-        System.out.println(mapper.fetchAll(User.class));
+        UserType type = new UserType();
+        //type.setUserTypeId(15);
+        type.setUserTypeName("Koště");
+        User user = new User();
+        user.setUsername("koště");
+        user.setUserType(type);
+        user.setEmail("košt@tě");
+        user.setPassword("hashed_koště");
+        mapper.save(user);
 
     }
 }
