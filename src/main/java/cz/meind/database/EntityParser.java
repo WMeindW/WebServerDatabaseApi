@@ -24,10 +24,6 @@ public class EntityParser {
                 metadata.addRelation("OneToOne", field);
             }
 
-            if (field.isAnnotationPresent(OneToMany.class)) {
-                metadata.addRelation("OneToMany", field);
-            }
-
             if (field.isAnnotationPresent(ManyToOne.class)) {
                 metadata.addRelation("ManyToOne", field);
             }

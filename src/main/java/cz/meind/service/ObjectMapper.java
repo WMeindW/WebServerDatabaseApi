@@ -3,9 +3,11 @@ package cz.meind.service;
 import cz.meind.database.EntityMetadata;
 import cz.meind.database.EntityParser;
 import cz.meind.interfaces.Column;
-import cz.meind.interfaces.OneToMany;
+import cz.meind.interfaces.JoinColumn;
+
 
 import java.lang.reflect.Field;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -101,56 +103,45 @@ public class ObjectMapper {
                     field.setAccessible(true);
                     field.set(entity, rs.getObject(columnName));
                 }
-                entities.add(entity);
-
-                // Handle relationships
                 for (Map.Entry<String, Field> relationEntry : metadata.getRelations().entrySet()) {
                     Field relationField = relationEntry.getValue();
                     relationField.setAccessible(true);
                     String relationType = relationEntry.getKey();
-                    if ("OneToMany".equals(relationType)) {
-                        List<?> relatedEntities = fetchRelatedEntities(clazz, relationField, entity);
-                        relationField.set(entity, relatedEntities);
+                    if (relationType.equals("ManyToOne")) {
+                        System.out.println(relationField.getType());
+                        relationField.set(entity, fetchById(relationField.getType(), rs.getObject(relationField.getAnnotation(JoinColumn.class).name()).toString()));
                     }
                 }
+                entities.add(entity);
             }
         }
 
         return entities;
     }
 
-    private <T> List<T> fetchRelatedEntities(Class<?> parentClass, Field relationField, Object parentEntity) throws Exception {
-        OneToMany oneToMany = relationField.getAnnotation(OneToMany.class);
-        String mappedBy = oneToMany.mappedBy();
-        Class<?> relatedClass = relationField.getType().getComponentType();
+    public <T> T fetchById(Class<T> clazz, String id) throws Exception {
+        EntityMetadata metadata = metadataRegistry.get(clazz);
+        Field idColumn = getIdField(clazz);
+        if (idColumn == null) throw new SQLException("No id column");
+        String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
 
-        EntityMetadata relatedMetadata = metadataRegistry.get(relatedClass);
-        String relatedTableName = relatedMetadata.getTableName();
-
-        Field parentField = getField(relatedClass, mappedBy);
-        String sql = "SELECT * FROM " + relatedTableName + " WHERE " + mappedBy + " = ?";
-
-        List<T> relatedEntities = new ArrayList<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            Field parentIdField = getIdField(parentClass);
-            parentIdField.setAccessible(true);
-            stmt.setObject(1, parentIdField.get(parentEntity));
-
+            stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    T relatedEntity = (T) relatedClass.getDeclaredConstructor().newInstance();
-                    for (Map.Entry<String, String> columnEntry : relatedMetadata.getColumns().entrySet()) {
+                T entity = clazz.getDeclaredConstructor().newInstance();
+                if (rs.next()) {
+                    for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
                         String columnName = columnEntry.getKey();
                         String fieldName = columnEntry.getValue();
-                        Field field = getField(relatedClass, fieldName);
+                        Field field = getField(clazz, fieldName);
                         field.setAccessible(true);
-                        field.set(relatedEntity, rs.getObject(columnName));
+                        field.set(entity, rs.getObject(columnName));
                     }
-                    relatedEntities.add(relatedEntity);
+                    return entity;
                 }
             }
         }
-        return relatedEntities;
+        return null;
     }
 
     private Field getIdField(Class<?> clazz) {
@@ -169,6 +160,7 @@ public class ObjectMapper {
             throw new RuntimeException("Field not found: " + fieldName, e);
         }
     }
+
     private Object castNumberToType(Number number, Class<?> targetType) {
         if (targetType == int.class || targetType == Integer.class) {
             return number.intValue();
