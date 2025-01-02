@@ -1,6 +1,9 @@
 package cz.meind.main;
 
-import cz.meind.application.Application;
+import cz.meind.database.entities.MotdEntity;
+import cz.meind.service.ObjectMapper;
+
+import java.sql.DriverManager;
 
 
 public class Main {
@@ -12,7 +15,10 @@ public class Main {
      *
      * @param args The command line arguments passed to the application.
      */
-    public static void main(String[] args) {
-        Application.run(args);
+    public static void main(String[] args) throws Exception {
+        //Application.run(args);
+        ObjectMapper mapper = new ObjectMapper(DriverManager.getConnection("jdbc:mysql://sql.daniellinda.net:3306/synchro", "remote", "hm3C4iLL+"));
+        mapper.registerEntity(MotdEntity.class);
+        System.out.println(mapper.fetchAll(MotdEntity.class));
     }
 }
