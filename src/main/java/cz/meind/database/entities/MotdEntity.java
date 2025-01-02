@@ -46,6 +46,11 @@ public class MotdEntity {
 
     }
 
+    public MotdEntity(String content, LocalDateTime date) {
+        this.content = content;
+        this.date = date;
+    }
+
     @Override
     public String toString() {
         return "MotdEntity{" +

@@ -52,13 +52,23 @@ public class ObjectMapper {
             }
             stmt.executeUpdate();
 
-            // Handle auto-generated keys
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     Field idField = getIdField(clazz);
                     if (idField != null) {
                         idField.setAccessible(true);
-                        idField.set(entity, generatedKeys.getObject(1));
+
+                        Object generatedKey = generatedKeys.getObject(1); // Get the generated key
+                        Class<?> idFieldType = idField.getType();         // Determine the field's type
+
+                        // Convert to the appropriate type if necessary
+                        if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
+                            Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
+                            Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
+                            idField.set(entity, convertedKey);
+                        } else {
+                            throw new IllegalArgumentException("Unsupported ID field type: " + idFieldType);
+                        }
                     }
                 }
             }
@@ -158,6 +168,22 @@ public class ObjectMapper {
         } catch (NoSuchFieldException e) {
             throw new RuntimeException("Field not found: " + fieldName, e);
         }
+    }
+    private Object castNumberToType(Number number, Class<?> targetType) {
+        if (targetType == int.class || targetType == Integer.class) {
+            return number.intValue();
+        } else if (targetType == long.class || targetType == Long.class) {
+            return number.longValue();
+        } else if (targetType == double.class || targetType == Double.class) {
+            return number.doubleValue();
+        } else if (targetType == float.class || targetType == Float.class) {
+            return number.floatValue();
+        } else if (targetType == short.class || targetType == Short.class) {
+            return number.shortValue();
+        } else if (targetType == byte.class || targetType == Byte.class) {
+            return number.byteValue();
+        }
+        throw new IllegalArgumentException("Unsupported number type: " + targetType);
     }
 }
 

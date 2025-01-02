@@ -4,6 +4,7 @@ import cz.meind.database.entities.MotdEntity;
 import cz.meind.service.ObjectMapper;
 
 import java.sql.DriverManager;
+import java.time.LocalDateTime;
 
 
 public class Main {
@@ -19,6 +20,7 @@ public class Main {
         //Application.run(args);
         ObjectMapper mapper = new ObjectMapper(DriverManager.getConnection("jdbc:mysql://sql.daniellinda.net:3306/synchro", "remote", "hm3C4iLL+"));
         mapper.registerEntity(MotdEntity.class);
+        mapper.save(new MotdEntity("Message", LocalDateTime.now()));
         System.out.println(mapper.fetchAll(MotdEntity.class));
     }
 }
