@@ -4,6 +4,7 @@ import cz.meind.database.EntityMetadata;
 import cz.meind.database.EntityParser;
 import cz.meind.interfaces.Column;
 import cz.meind.interfaces.JoinColumn;
+import cz.meind.interfaces.ManyToOne;
 
 
 import java.lang.reflect.Field;
@@ -37,7 +38,7 @@ public class ObjectMapper {
             throw new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field");
         }
         idField.setAccessible(true);
-        if (Integer.parseInt(idField.get(entity).toString()) != 0) return  (Integer) idField.get(entity);
+        if (Integer.parseInt(idField.get(entity).toString()) != 0) return (Integer) idField.get(entity);
 
         StringBuilder sql = new StringBuilder("INSERT INTO ").append(metadata.getTableName()).append(" (");
         StringBuilder values = new StringBuilder(" VALUES (");
@@ -48,8 +49,10 @@ public class ObjectMapper {
         for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
             Field relationField = relations.getValue();
             relationField.setAccessible(true);
-            Integer id = save(relationField.get(entity));
-            if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
+            if (relationField.isAnnotationPresent(ManyToOne.class)){
+                Integer id = save(relationField.get(entity));
+                if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
+            }
         }
 
         for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
@@ -59,6 +62,7 @@ public class ObjectMapper {
             field.setAccessible(true);
             params.add(field.get(entity));
         }
+
         for (Map.Entry<String, Integer> rel : relationFields.entrySet()) {
             values.append("?,");
             sql.append(rel.getKey()).append(",");
@@ -73,7 +77,6 @@ public class ObjectMapper {
             for (int i = 0; i < params.size(); i++) {
                 stmt.setObject(i + 1, params.get(i));
             }
-            System.out.println(stmt);
             stmt.executeUpdate();
 
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {

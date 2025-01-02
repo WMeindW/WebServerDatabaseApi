@@ -22,7 +22,7 @@ public class Main {
         mapper.registerEntity(UserType.class);
         mapper.registerEntity(User.class);
         UserType type = new UserType();
-        //type.setUserTypeId(15);
+        type.setUserTypeId(16);
         type.setUserTypeName("Koště");
         User user = new User();
         user.setUsername("koště");
