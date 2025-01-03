@@ -4,13 +4,48 @@ import cz.meind.interfaces.Column;
 import cz.meind.interfaces.Entity;
 import cz.meind.interfaces.ManyToMany;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity(tableName = "orders")
 public class Order {
     @Column(name = "order_id", unique = true)
-    Long orderId;
+    private int orderId;
+
+    @Column(name ="order_date")
+    private Timestamp orderDate;
+
+    @Column(name = "total_amount")
+    private BigDecimal orderTotal;
 
     @ManyToMany(joinTable = "user_orders")
-    Set<User> users;
+    private Set<User> users;
+
+    public int getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
+    }
+
+    public Set<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Set<User> users) {
+        this.users = users;
+    }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "orderId=" + orderId +
+                ", orderDate=" + orderDate.toLocalDateTime() +
+                ", orderTotal=" + orderTotal +
+                ", users=" + users +
+                '}';
+    }
 }

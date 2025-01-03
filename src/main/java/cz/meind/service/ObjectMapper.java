@@ -4,6 +4,7 @@ import cz.meind.database.EntityMetadata;
 import cz.meind.database.EntityParser;
 import cz.meind.interfaces.Column;
 import cz.meind.interfaces.JoinColumn;
+import cz.meind.interfaces.ManyToMany;
 import cz.meind.interfaces.ManyToOne;
 
 
@@ -124,7 +125,7 @@ public class ObjectMapper {
                     if (relationType.equals("ManyToOne")) {
                         relationField.set(entity, fetchById(relationField.getType(), rs.getObject(relationField.getAnnotation(JoinColumn.class).name()).toString()));
                     } else if (relationType.equals("ManyToMany")) {
-                        //CODE HERE
+                        System.out.println(relationField.getAnnotation(ManyToMany.class).joinTable());
                     }
                 }
                 entities.add(entity);
@@ -134,7 +135,7 @@ public class ObjectMapper {
         return entities;
     }
 
-    public <T> T fetchById(Class<T> clazz, String id) throws Exception {
+    private <T> T fetchById(Class<T> clazz, String id) throws Exception {
         EntityMetadata metadata = metadataRegistry.get(clazz);
         Field idColumn = getIdField(clazz);
         if (idColumn == null) throw new SQLException("No id column");

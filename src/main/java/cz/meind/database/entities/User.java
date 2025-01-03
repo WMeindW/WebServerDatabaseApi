@@ -1,9 +1,8 @@
 package cz.meind.database.entities;
 
-import cz.meind.interfaces.Column;
-import cz.meind.interfaces.Entity;
-import cz.meind.interfaces.JoinColumn;
-import cz.meind.interfaces.ManyToOne;
+import cz.meind.interfaces.*;
+
+import java.util.Set;
 
 @Entity(tableName = "users")
 public class User {
@@ -24,7 +23,17 @@ public class User {
     @JoinColumn(name = "user_type_id")
     private UserType userType;
 
-    // Getters and setters
+    @ManyToMany(joinTable = "user_orders")
+    private Set<Order> orders;
+
+    public Set<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(Set<Order> orders) {
+        this.orders = orders;
+    }
+
     public int getUserId() {
         return userId;
     }

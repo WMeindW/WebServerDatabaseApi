@@ -1,5 +1,6 @@
 package cz.meind.main;
 
+import cz.meind.database.entities.Order;
 import cz.meind.database.entities.User;
 import cz.meind.database.entities.UserType;
 import cz.meind.service.ObjectMapper;
@@ -19,17 +20,9 @@ public class Main {
     public static void main(String[] args) throws Exception {
         //Application.run(args);
         ObjectMapper mapper = new ObjectMapper(DriverManager.getConnection("jdbc:mysql://sql.daniellinda.net:3306/andrem", "remote", "hm3C4iLL+"));
-        mapper.registerEntity(UserType.class);
+        mapper.registerEntity(Order.class);
         mapper.registerEntity(User.class);
-        UserType type = new UserType();
-        type.setUserTypeId(16);
-        type.setUserTypeName("Koště");
-        User user = new User();
-        user.setUsername("koště");
-        user.setUserType(type);
-        user.setEmail("košt@tě");
-        user.setPassword("hashed_koště");
-        mapper.save(user);
+        System.out.println(mapper.fetchAll(Order.class));
 
     }
 }
