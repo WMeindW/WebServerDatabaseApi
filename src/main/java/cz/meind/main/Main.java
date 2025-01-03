@@ -22,7 +22,9 @@ public class Main {
         ObjectMapper mapper = new ObjectMapper(DriverManager.getConnection("jdbc:mysql://sql.daniellinda.net:3306/andrem", "remote", "hm3C4iLL+"));
         mapper.registerEntity(Order.class);
         mapper.registerEntity(User.class);
-        System.out.println(mapper.fetchAll(Order.class));
+        mapper.registerEntity(UserType.class);
+
+        System.out.println(mapper.fetchById(Order.class, "1"));
 
     }
 }
