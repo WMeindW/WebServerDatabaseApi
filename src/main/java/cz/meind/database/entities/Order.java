@@ -6,12 +6,12 @@ import cz.meind.interfaces.ManyToMany;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Set;
 
 @Entity(tableName = "orders")
 public class Order {
-    @Column(name = "order_id", unique = true)
+    @Column(name = "order_id", id = true)
     private int orderId;
 
     @Column(name ="order_date")
@@ -20,8 +20,8 @@ public class Order {
     @Column(name = "total_amount")
     private BigDecimal orderTotal;
 
-    @ManyToMany(joinTable = "user_orders")
-    private Set<User> users;
+    @ManyToMany(joinTable = "user_orders", mappedBy = "order_id", targetColumn = "user_id")
+    private Collection<User> users;
 
     public int getOrderId() {
         return orderId;
@@ -31,11 +31,11 @@ public class Order {
         this.orderId = orderId;
     }
 
-    public Set<User> getUsers() {
+    public Collection<User> getUsers() {
         return users;
     }
 
-    public void setUsers(Set<User> users) {
+    public void setUsers(Collection<User> users) {
         this.users = users;
     }
 

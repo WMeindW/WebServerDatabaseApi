@@ -2,12 +2,13 @@ package cz.meind.database.entities;
 
 import cz.meind.interfaces.*;
 
+import java.util.Collection;
 import java.util.Set;
 
 @Entity(tableName = "users")
 public class User {
 
-    @Column(name = "user_id",unique = true)
+    @Column(name = "user_id", id = true)
     private int userId;
 
     @Column(name = "username")
@@ -23,14 +24,14 @@ public class User {
     @JoinColumn(name = "user_type_id")
     private UserType userType;
 
-    @ManyToMany(joinTable = "user_orders")
-    private Set<Order> orders;
+    @ManyToMany(joinTable = "user_orders", mappedBy = "user_id", targetColumn = "order_id")
+    private Collection<Order> orders;
 
-    public Set<Order> getOrders() {
+    public Collection<Order> getOrders() {
         return orders;
     }
 
-    public void setOrders(Set<Order> orders) {
+    public void setOrders(Collection<Order> orders) {
         this.orders = orders;
     }
 

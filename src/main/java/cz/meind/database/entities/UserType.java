@@ -6,7 +6,7 @@ import cz.meind.interfaces.Entity;
 @Entity(tableName = "user_types")
 public class UserType {
 
-    @Column(name = "user_type_id",unique = true)
+    @Column(name = "user_type_id", id = true)
     private int userTypeId;
 
     @Column(name = "user_type_name")

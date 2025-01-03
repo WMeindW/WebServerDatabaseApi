@@ -10,5 +10,5 @@ import java.lang.annotation.Target;
 public @interface Column {
     String name();
 
-    boolean unique() default false;
+    boolean id() default false;
 }

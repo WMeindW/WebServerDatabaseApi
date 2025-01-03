@@ -9,4 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ManyToMany {
     String joinTable();
+    String mappedBy();
+    String targetColumn();
 }
