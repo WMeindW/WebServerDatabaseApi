@@ -20,7 +20,7 @@ public class DatabaseContext {
 
     public DatabaseContext() {
         Application.logger.info(DatabaseContext.class, "Initializing database context.");
-        Reflections reflections = new Reflections("cz.meind.user");
+        Reflections reflections = new Reflections("cz.meind");
         reflections.getTypesAnnotatedWith(Entity.class).forEach(entity -> entities.put(entity, EntityParser.parseEntity(entity)));
     }
 }

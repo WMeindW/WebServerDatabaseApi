@@ -18,7 +18,7 @@ public class ContextLoader {
 
     public ContextLoader() {
         Application.logger.info(ContextLoader.class, "Loading context.");
-        Reflections reflections = new Reflections("cz.meind.user");
+        Reflections reflections = new Reflections("cz.meind");
         Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Api.class);
         for (Class<?> clazz : classes) {
             for (Method method : clazz.getDeclaredMethods()) {
