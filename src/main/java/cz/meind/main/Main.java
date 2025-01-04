@@ -24,6 +24,6 @@ public class Main {
         mapper.registerEntity(User.class);
         mapper.registerEntity(UserType.class);
 
-        System.out.println(mapper.fetchAll(Order.class));
+        System.out.println(mapper.fetchAll(User.class));
     }
 }

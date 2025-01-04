@@ -83,6 +83,7 @@ public class User {
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", userType=" + userType +
+                ", orders=" + orders +
                 '}';
     }
 }

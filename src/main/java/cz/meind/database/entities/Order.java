@@ -45,7 +45,6 @@ public class Order {
                 "orderId=" + orderId +
                 ", orderDate=" + orderDate.toLocalDateTime() +
                 ", orderTotal=" + orderTotal +
-                ", users=" + users +
                 '}';
     }
 }

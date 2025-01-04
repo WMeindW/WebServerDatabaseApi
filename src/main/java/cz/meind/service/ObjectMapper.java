@@ -51,6 +51,10 @@ public class ObjectMapper {
             if (relationField.isAnnotationPresent(ManyToOne.class)) {
                 Integer id = save(relationField.get(entity));
                 if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
+            } else if (relationField.isAnnotationPresent(ManyToMany.class)) {
+                for (Object o : (Collection<?>) relationField.get(entity)) {
+                    System.out.println(o.toString());
+                }
             }
         }
 
@@ -100,7 +104,7 @@ public class ObjectMapper {
         return null;
     }
 
-    public <T> List<T> fetchAll(Class<T> clazz) throws Exception {
+    public <T> Collection<T> fetchAll(Class<T> clazz) throws Exception {
         EntityMetadata metadata = metadataRegistry.get(clazz);
         String sql = "SELECT * FROM " + metadata.getTableName();
         List<T> entities = new ArrayList<>();
