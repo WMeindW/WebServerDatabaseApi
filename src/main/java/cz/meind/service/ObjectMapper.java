@@ -42,7 +42,7 @@ public class ObjectMapper {
         StringBuilder sql = new StringBuilder("INSERT INTO ").append(metadata.getTableName()).append(" (");
         StringBuilder values = new StringBuilder(" VALUES (");
         List<Object> params = new ArrayList<>();
-
+        Map<Object, Field> mtm = new HashMap<>();
         Map<String, Integer> relationFields = new HashMap<>();
 
         for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
@@ -59,7 +59,7 @@ public class ObjectMapper {
                     idFieldRelation.setAccessible(true);
                     if (idFieldRelation.get(o).toString().equals("0"))
                         throw new IllegalArgumentException("Save related entities first.");
-                    System.out.println(idFieldRelation.get(o));
+                    mtm.put(o, relationField);
                 }
             }
         }
@@ -103,11 +103,13 @@ public class ObjectMapper {
                     } else {
                         throw new IllegalArgumentException("Unsupported ID field type: " + idFieldType);
                     }
-                    return (Integer) idField.get(entity);
                 }
             }
         }
-        return null;
+        for (Map.Entry<Object, Field> m : mtm.entrySet()) {
+            saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
+        }
+        return (Integer) idField.get(entity);
     }
 
     public <T> Collection<T> fetchAll(Class<T> clazz) throws Exception {
@@ -166,8 +168,17 @@ public class ObjectMapper {
 
     }
 
-    private void saveAllRelations(String mappedBy, String targetColumn, String joinTable) {
-
+    private void saveAllRelations(String id, Object o, Field relationField) throws Exception {
+        String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
+        String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
+        String sql = "INSERT INTO " + tableName + " (" + idColumn + ", " + relationField.getAnnotation(ManyToMany.class).targetColumn() + ") VALUES (?,?)";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Field idFieldRelation = getIdField(o.getClass());
+            idFieldRelation.setAccessible(true);
+            stmt.setObject(1, id);
+            stmt.setObject(2, idFieldRelation.get(o));
+            stmt.executeUpdate();
+        }
     }
 
 

@@ -24,8 +24,8 @@ public class Main {
         mapper.registerEntity(User.class);
         mapper.registerEntity(UserType.class);
         User user = mapper.fetchById(User.class, 2);
+        user.setUserId(0);
         user.setUsername("testik");
-        System.out.println(user);
         mapper.save(user);
     }
 }
