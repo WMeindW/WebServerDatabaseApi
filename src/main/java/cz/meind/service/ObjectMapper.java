@@ -60,10 +60,10 @@ public class ObjectMapper {
                 for (Object o : (Collection<?>) relationField.get(entity)) {
                     Field idFieldRelation = getIdField(o.getClass());
                     if (idFieldRelation == null)
-                        throw new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field");
+                        Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
                     idFieldRelation.setAccessible(true);
                     if (idFieldRelation.get(o).toString().equals("0"))
-                        throw new IllegalArgumentException("Save related entities first.");
+                        Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
                     mtm.put(o, relationField);
                 }
             }
@@ -105,7 +105,7 @@ public class ObjectMapper {
                         Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
                         idField.set(entity, convertedKey);
                     } else {
-                        throw new IllegalArgumentException("Unsupported ID field type: " + idFieldType);
+                        Application.logger.error(ObjectMapper.class,new IllegalArgumentException("Unsupported id field type: " + idFieldType));
                     }
                 }
             }

@@ -23,11 +23,11 @@ public class Order {
     @ManyToMany(joinTable = "user_orders", mappedBy = "order_id", targetColumn = "user_id")
     private Collection<User> users;
 
-    public Long getOrderId() {
+    public long getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(Long orderId) {
+    public void setOrderId(long orderId) {
         this.orderId = orderId;
     }
 
