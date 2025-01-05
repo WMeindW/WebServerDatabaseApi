@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 /**
  * A class for logging messages to a file.
@@ -93,6 +94,7 @@ public class Logger {
      * @param e The exception.
      */
     public void error(Class<?> c, Exception e) {
+        e.printStackTrace();
         System.out.println(c.getName() + " [" + LocalDateTime.now() + "] ERROR: " + e.toString());
         write(c.getName() + " [" + LocalDateTime.now() + "] ERROR: " + e);
     }

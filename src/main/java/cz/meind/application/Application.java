@@ -2,6 +2,7 @@ package cz.meind.application;
 
 import cz.meind.database.DatabaseContext;
 import cz.meind.logger.Logger;
+import cz.meind.service.Console;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -16,8 +17,6 @@ public class Application {
     public static String configFilePath = "src/main/resources/application.properties";
 
     public static String logFilePath = "log/log.txt";
-
-    public static String mimesPath = "src/main/resources/mimes.properties";
 
     public static String dbUrl = "jdbc:mysql://localhost:3306/andrem";
 
@@ -36,6 +35,7 @@ public class Application {
         initializeLogger();
         initializeConfig(args);
         initializeDatabaseProfile();
+        Console.run();
     }
 
 
@@ -75,7 +75,6 @@ public class Application {
         }
         try {
             logFilePath = properties.getProperty("log.file.path");
-            mimesPath = properties.getProperty("server.mimes.path");
             dbUrl = properties.getProperty("database.url");
             dbUser = properties.getProperty("database.user");
             dbPassword = properties.getProperty("database.password");

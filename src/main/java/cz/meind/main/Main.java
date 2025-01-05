@@ -1,11 +1,6 @@
 package cz.meind.main;
 
-import cz.meind.database.entities.Order;
-import cz.meind.database.entities.User;
-import cz.meind.database.entities.UserType;
-import cz.meind.service.ObjectMapper;
-
-import java.sql.DriverManager;
+import cz.meind.application.Application;
 
 
 public class Main {
@@ -17,15 +12,7 @@ public class Main {
      *
      * @param args The command line arguments passed to the application.
      */
-    public static void main(String[] args) throws Exception {
-        //Application.run(args);
-        ObjectMapper mapper = new ObjectMapper(DriverManager.getConnection("jdbc:mysql://sql.daniellinda.net:3306/andrem", "remote", "hm3C4iLL+"));
-        mapper.registerEntity(Order.class);
-        mapper.registerEntity(User.class);
-        mapper.registerEntity(UserType.class);
-        User user = mapper.fetchById(User.class, 2);
-        user.setUserId(0);
-        user.setUsername("testik");
-        mapper.save(user);
+    public static void main(String[] args) {
+        Application.run(args);
     }
 }

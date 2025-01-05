@@ -1,7 +1,7 @@
 package cz.meind.service;
 
+import cz.meind.application.Application;
 import cz.meind.database.EntityMetadata;
-import cz.meind.database.EntityParser;
 import cz.meind.interfaces.Column;
 import cz.meind.interfaces.JoinColumn;
 import cz.meind.interfaces.ManyToMany;
@@ -10,27 +10,32 @@ import cz.meind.interfaces.ManyToOne;
 
 import java.lang.reflect.Field;
 
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.*;
 
 
 public class ObjectMapper {
-    private final Map<Class<?>, EntityMetadata> metadataRegistry = new HashMap<>();
     private final Connection connection;
+    private final RelationMapper relationMapper;
 
     public ObjectMapper(Connection connection) {
         this.connection = connection;
+        relationMapper = new RelationMapper(connection, this);
     }
 
-    public void registerEntity(Class<?> clazz) {
-        EntityMetadata metadata = EntityParser.parseEntity(clazz);
-        metadataRegistry.put(clazz, metadata);
+    public Integer save(Object o) {
+        try {
+            return completeSave(o);
+        } catch (Exception e) {
+            Application.logger.error(ObjectMapper.class, e);
+        }
+        return null;
     }
 
-    public Integer save(Object entity) throws Exception {
+    private Integer completeSave(Object entity) throws IllegalAccessException, SQLException {
         Class<?> clazz = entity.getClass();
-        EntityMetadata metadata = metadataRegistry.get(clazz);
+        EntityMetadata metadata = Application.database.entities.get(clazz);
 
         Field idField = getIdField(clazz);
         if (idField == null) {
@@ -49,7 +54,7 @@ public class ObjectMapper {
             Field relationField = relations.getValue();
             relationField.setAccessible(true);
             if (relationField.isAnnotationPresent(ManyToOne.class)) {
-                Integer id = save(relationField.get(entity));
+                Integer id = completeSave(relationField.get(entity));
                 if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
             } else if (relationField.isAnnotationPresent(ManyToMany.class)) {
                 for (Object o : (Collection<?>) relationField.get(entity)) {
@@ -95,7 +100,6 @@ public class ObjectMapper {
                     Object generatedKey = generatedKeys.getObject(1); // Get the generated key
                     Class<?> idFieldType = idField.getType();         // Determine the field's type
 
-                    // Convert to the appropriate type if necessary
                     if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
                         Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
                         Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
@@ -107,33 +111,42 @@ public class ObjectMapper {
             }
         }
         for (Map.Entry<Object, Field> m : mtm.entrySet()) {
-            saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
+            relationMapper.saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
         }
         return (Integer) idField.get(entity);
     }
 
-    public <T> Collection<T> fetchAll(Class<T> clazz) throws Exception {
-        EntityMetadata metadata = metadataRegistry.get(clazz);
+    public <T> Collection<T> fetchAll(Class<T> clazz) {
+        EntityMetadata metadata = Application.database.entities.get(clazz);
         String sql = "SELECT * FROM " + metadata.getTableName();
         List<T> entities = new ArrayList<>();
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                T entity = clazz.getDeclaredConstructor().newInstance();
-                mapFields(entity, clazz, rs);
-                entities.add(entity);
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    T entity = clazz.getDeclaredConstructor().newInstance();
+                    mapFields(entity, clazz, rs);
+                    entities.add(entity);
+                }
+            } catch (Exception e) {
+                Application.logger.error(ObjectMapper.class,e);
             }
+        } catch (SQLException  e) {
+            Application.logger.error(ObjectMapper.class,e);
         }
 
         return entities;
     }
 
-    public <T> T fetchById(Class<T> clazz, Number id) throws Exception {
-        EntityMetadata metadata = metadataRegistry.get(clazz);
+    public <T> T fetchById(Class<T> clazz, Integer id) {
+        EntityMetadata metadata = Application.database.entities.get(clazz);
         Field idColumn = getIdField(clazz);
-        if (idColumn == null) throw new SQLException("No id column");
+        if (idColumn == null) {
+            Application.logger.error(ObjectMapper.class, new SQLException("No id field found"));
+            return null;
+        }
         String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
-
+    
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -142,48 +155,18 @@ public class ObjectMapper {
                     mapFields(entity, clazz, rs);
                     return entity;
                 }
+            } catch (Exception e) {
+                Application.logger.error(ObjectMapper.class, e);
             }
+        } catch (SQLException e) {
+            Application.logger.error(ObjectMapper.class, e);
         }
         return null;
     }
 
-    public <T> Collection<T> fetchAllRelations(String id, Field relationField) throws Exception {
-        List<T> entities = new ArrayList<>();
-        String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
-        String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
-        String sql = "SELECT * FROM " + tableName + " WHERE " + idColumn + " = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                ParameterizedType type = (ParameterizedType) relationField.getGenericType();
-                Class<T> clazz = (Class<T>) type.getActualTypeArguments()[0];
-                while (rs.next()) {
-                    T entity = clazz.getDeclaredConstructor().newInstance();
-                    fetchById(rs.getObject(relationField.getAnnotation(ManyToMany.class).targetColumn()).toString(), clazz, entity);
-                    entities.add(entity);
-                }
-            }
-        }
-        return entities;
 
-    }
-
-    private void saveAllRelations(String id, Object o, Field relationField) throws Exception {
-        String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
-        String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
-        String sql = "INSERT INTO " + tableName + " (" + idColumn + ", " + relationField.getAnnotation(ManyToMany.class).targetColumn() + ") VALUES (?,?)";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            Field idFieldRelation = getIdField(o.getClass());
-            idFieldRelation.setAccessible(true);
-            stmt.setObject(1, id);
-            stmt.setObject(2, idFieldRelation.get(o));
-            stmt.executeUpdate();
-        }
-    }
-
-
-    private void fetchById(String id, Class<?> clazz, Object entity) throws Exception {
-        EntityMetadata metadata = metadataRegistry.get(clazz);
+    void fetchById(String id, Class<?> clazz, Object entity) throws Exception {
+        EntityMetadata metadata = Application.database.entities.get(clazz);
         Field idColumn = getIdField(clazz);
         if (idColumn == null) throw new SQLException("No id column");
         String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
@@ -204,7 +187,7 @@ public class ObjectMapper {
                         relationField.setAccessible(true);
                         String relationType = relationEntry.getKey();
                         if (relationType.equals("ManyToOne")) {
-                            relationField.set(entity, fetchById(relationField.getType(), (Number) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
+                            relationField.set(entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
                         }
                     }
                 }
@@ -213,7 +196,7 @@ public class ObjectMapper {
     }
 
     private void mapFields(Object entity, Class<?> clazz, ResultSet rs) throws Exception {
-        EntityMetadata metadata = metadataRegistry.get(clazz);
+        EntityMetadata metadata = Application.database.entities.get(clazz);
         Field idField = getIdField(clazz);
         if (idField == null) return;
         idField.setAccessible(true);
@@ -229,14 +212,14 @@ public class ObjectMapper {
             relationField.setAccessible(true);
             String relationType = relationEntry.getKey();
             if (relationType.equals("ManyToOne")) {
-                relationField.set(entity, fetchById(relationField.getType(), (Number) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
+                relationField.set(entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
             } else if (relationType.equals("ManyToMany")) {
-                relationField.set(entity, fetchAllRelations(idField.get(entity).toString(), relationField));
+                relationField.set(entity, relationMapper.fetchAllRelations(idField.get(entity).toString(), relationField));
             }
         }
     }
 
-    private Field getIdField(Class<?> clazz) {
+    Field getIdField(Class<?> clazz) {
         for (Field field : clazz.getDeclaredFields()) {
             if (field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).id()) {
                 return field;

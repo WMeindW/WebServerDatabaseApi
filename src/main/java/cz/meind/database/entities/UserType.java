@@ -7,17 +7,17 @@ import cz.meind.interfaces.Entity;
 public class UserType {
 
     @Column(name = "user_type_id", id = true)
-    private int userTypeId;
+    private long userTypeId;
 
     @Column(name = "user_type_name")
     private String userTypeName;
 
     // Getters and setters
-    public int getUserTypeId() {
+    public Long getUserTypeId() {
         return userTypeId;
     }
 
-    public void setUserTypeId(int userTypeId) {
+    public void setUserTypeId(Long userTypeId) {
         this.userTypeId = userTypeId;
     }
 

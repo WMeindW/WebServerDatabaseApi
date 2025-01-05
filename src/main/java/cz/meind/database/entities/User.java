@@ -10,7 +10,7 @@ import java.util.Set;
 public class User {
 
     @Column(name = "user_id", id = true)
-    private int userId;
+    private long userId;
 
     @Column(name = "username")
     private String username;
@@ -36,11 +36,11 @@ public class User {
         this.orders = orders;
     }
 
-    public int getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
     }
 

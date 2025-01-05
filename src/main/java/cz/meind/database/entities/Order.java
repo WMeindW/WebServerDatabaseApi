@@ -12,7 +12,7 @@ import java.util.Set;
 @Entity(tableName = "orders")
 public class Order {
     @Column(name = "order_id", id = true)
-    private int orderId;
+    private long orderId;
 
     @Column(name ="order_date")
     private Timestamp orderDate;
@@ -23,11 +23,11 @@ public class Order {
     @ManyToMany(joinTable = "user_orders", mappedBy = "order_id", targetColumn = "user_id")
     private Collection<User> users;
 
-    public int getOrderId() {
+    public Long getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(int orderId) {
+    public void setOrderId(Long orderId) {
         this.orderId = orderId;
     }
 

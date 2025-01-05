@@ -14,8 +14,13 @@ public class DatabaseContext {
 
     public Map<Class<?>, EntityMetadata> entities = new HashMap<>();
 
-    public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(Application.dbUrl, Application.dbUser, Application.dbPassword);
+    public Connection getConnection() {
+        try {
+            return DriverManager.getConnection(Application.dbUrl, Application.dbUser, Application.dbPassword);
+        } catch (SQLException e) {
+            Application.logger.error(DatabaseContext.class, e);
+        }
+        return null;
     }
 
     public DatabaseContext() {
