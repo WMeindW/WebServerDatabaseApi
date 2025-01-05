@@ -2,42 +2,20 @@ package cz.meind.application;
 
 import cz.meind.database.DatabaseContext;
 import cz.meind.logger.Logger;
-import cz.meind.service.ContextLoader;
-import cz.meind.service.Monitoring;
-import cz.meind.service.Server;
-import cz.meind.service.asynch.Daemon;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.Properties;
 
 public class Application {
-    public static ContextLoader context;
 
     public static DatabaseContext database;
 
     public static Logger logger;
 
-    public static Server server;
-
-    public static Monitoring monitor;
-
-    public static Thread daemonThread;
-
     public static String configFilePath = "src/main/resources/application.properties";
 
     public static String logFilePath = "log/log.txt";
-
-    public static int port = 8088;
-
-    public static int poolSize = 16;
-
-    public static List<String> defaultHeaders;
-
-    public static String publicFilePath = "src/main/resources/public";
-
-    public static String serverName = "thread-test";
 
     public static String mimesPath = "src/main/resources/mimes.properties";
 
@@ -57,45 +35,15 @@ public class Application {
     public static void run(String[] args) {
         initializeLogger();
         initializeConfig(args);
-        initializeContext();
         initializeDatabaseProfile();
-        initializeDaemon();
-        initializeServer();
     }
 
-    private static void initializeContext() {
-        Application.logger.info(Application.class, "Initializing context loader.");
-        context = new ContextLoader();
-    }
 
     private static void initializeDatabaseProfile() {
         Application.logger.info(Application.class, "Initializing database profile.");
         database = new DatabaseContext();
     }
 
-    /**
-     * Initializes the daemon thread for the application.
-     * This method sets up a shutdown hook to ensure the daemon
-     * is properly shut down when the application exits. It then
-     * creates and starts a new daemon thread.
-     */
-    private static void initializeDaemon() {
-        Runtime.getRuntime().addShutdownHook(new Thread(Daemon::shutdown));
-        daemonThread = new Thread(new Daemon());
-        daemonThread.setDaemon(true);
-        daemonThread.start();
-        Application.logger.info(Daemon.class, "Starting daemon.");
-    }
-
-    /**
-     * Initializes the server component of the application.
-     * This method logs the start of the server initialization process
-     * and creates a new instance of the Server class.
-     */
-    private static void initializeServer() {
-        Application.logger.info(Server.class, "Starting server.");
-        server = new Server();
-    }
 
     /**
      * Initializes the logger for the application.
@@ -127,11 +75,6 @@ public class Application {
         }
         try {
             logFilePath = properties.getProperty("log.file.path");
-            port = Integer.parseInt(properties.getProperty("server.port"));
-            poolSize = Integer.parseInt(properties.getProperty("server.thread.pool.size"));
-            defaultHeaders = List.of(properties.getProperty("server.default.headers").split(", "));
-            publicFilePath = properties.getProperty("server.public.file.path");
-            serverName = properties.getProperty("server.name");
             mimesPath = properties.getProperty("server.mimes.path");
             dbUrl = properties.getProperty("database.url");
             dbUser = properties.getProperty("database.user");

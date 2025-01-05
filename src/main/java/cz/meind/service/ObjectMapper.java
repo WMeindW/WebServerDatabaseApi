@@ -53,7 +53,13 @@ public class ObjectMapper {
                 if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
             } else if (relationField.isAnnotationPresent(ManyToMany.class)) {
                 for (Object o : (Collection<?>) relationField.get(entity)) {
-                    System.out.println(o.toString());
+                    Field idFieldRelation = getIdField(o.getClass());
+                    if (idFieldRelation == null)
+                        throw new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field");
+                    idFieldRelation.setAccessible(true);
+                    if (idFieldRelation.get(o).toString().equals("0"))
+                        throw new IllegalArgumentException("Save related entities first.");
+                    System.out.println(idFieldRelation.get(o));
                 }
             }
         }
@@ -120,7 +126,7 @@ public class ObjectMapper {
         return entities;
     }
 
-    public <T> T fetchById(Class<T> clazz, String id) throws Exception {
+    public <T> T fetchById(Class<T> clazz, Number id) throws Exception {
         EntityMetadata metadata = metadataRegistry.get(clazz);
         Field idColumn = getIdField(clazz);
         if (idColumn == null) throw new SQLException("No id column");
@@ -143,8 +149,6 @@ public class ObjectMapper {
         List<T> entities = new ArrayList<>();
         String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
         String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
-        System.out.println(tableName);
-        System.out.println(idColumn);
         String sql = "SELECT * FROM " + tableName + " WHERE " + idColumn + " = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, id);
@@ -153,7 +157,7 @@ public class ObjectMapper {
                 Class<T> clazz = (Class<T>) type.getActualTypeArguments()[0];
                 while (rs.next()) {
                     T entity = clazz.getDeclaredConstructor().newInstance();
-                    fetchByIdFinal(rs.getObject(relationField.getAnnotation(ManyToMany.class).targetColumn()).toString(), clazz, entity);
+                    fetchById(rs.getObject(relationField.getAnnotation(ManyToMany.class).targetColumn()).toString(), clazz, entity);
                     entities.add(entity);
                 }
             }
@@ -162,7 +166,12 @@ public class ObjectMapper {
 
     }
 
-    private void fetchByIdFinal(String id, Class<?> clazz, Object entity) throws Exception {
+    private void saveAllRelations(String mappedBy, String targetColumn, String joinTable) {
+
+    }
+
+
+    private void fetchById(String id, Class<?> clazz, Object entity) throws Exception {
         EntityMetadata metadata = metadataRegistry.get(clazz);
         Field idColumn = getIdField(clazz);
         if (idColumn == null) throw new SQLException("No id column");
@@ -184,7 +193,7 @@ public class ObjectMapper {
                         relationField.setAccessible(true);
                         String relationType = relationEntry.getKey();
                         if (relationType.equals("ManyToOne")) {
-                            relationField.set(entity, fetchById(relationField.getType(), rs.getObject(relationField.getAnnotation(JoinColumn.class).name()).toString()));
+                            relationField.set(entity, fetchById(relationField.getType(), (Number) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
                         }
                     }
                 }
@@ -209,7 +218,7 @@ public class ObjectMapper {
             relationField.setAccessible(true);
             String relationType = relationEntry.getKey();
             if (relationType.equals("ManyToOne")) {
-                relationField.set(entity, fetchById(relationField.getType(), rs.getObject(relationField.getAnnotation(JoinColumn.class).name()).toString()));
+                relationField.set(entity, fetchById(relationField.getType(), (Number) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
             } else if (relationType.equals("ManyToMany")) {
                 relationField.set(entity, fetchAllRelations(idField.get(entity).toString(), relationField));
             }

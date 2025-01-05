@@ -3,6 +3,7 @@ package cz.meind.database.entities;
 import cz.meind.interfaces.*;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @Entity(tableName = "users")
@@ -25,13 +26,13 @@ public class User {
     private UserType userType;
 
     @ManyToMany(joinTable = "user_orders", mappedBy = "user_id", targetColumn = "order_id")
-    private Collection<Order> orders;
+    private List<Order> orders;
 
-    public Collection<Order> getOrders() {
+    public List<Order> getOrders() {
         return orders;
     }
 
-    public void setOrders(Collection<Order> orders) {
+    public void setOrders(List<Order> orders) {
         this.orders = orders;
     }
 
