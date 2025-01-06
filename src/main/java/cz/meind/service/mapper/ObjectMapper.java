@@ -38,17 +38,19 @@ public class ObjectMapper {
 
         Field idField = getIdField(clazz);
         if (idField == null) {
-            throw new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field");
+            Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field"));
         }
         idField.setAccessible(true);
-        if (Integer.parseInt(idField.get(entity).toString()) != 0) return (Integer) idField.get(entity);
+        if (idField.get(entity) == null)
+            idField.set(entity, 0);
+        if (Integer.parseInt(idField.get(entity).toString()) != 0)
+            return (Integer) idField.get(entity);
 
         StringBuilder sql = new StringBuilder("INSERT INTO ").append(metadata.getTableName()).append(" (");
         StringBuilder values = new StringBuilder(" VALUES (");
         List<Object> params = new ArrayList<>();
         Map<Object, Field> mtm = new HashMap<>();
         Map<String, Integer> relationFields = new HashMap<>();
-
         for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
             Field relationField = relations.getValue();
             relationField.setAccessible(true);
@@ -87,6 +89,7 @@ public class ObjectMapper {
         sql.append(")").append(values).append(")");
 
         try (PreparedStatement stmt = connection.prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS)) {
+            Application.logger.info(ObjectMapper.class, sql.toString());
             for (int i = 0; i < params.size(); i++) {
                 stmt.setObject(i + 1, params.get(i));
             }
@@ -115,7 +118,7 @@ public class ObjectMapper {
         return (Integer) idField.get(entity);
     }
 
-    public <T> Collection<T> fetchAll(Class<T> clazz) {
+    public <T> List<T> fetchAll(Class<T> clazz) {
         EntityMetadata metadata = Application.database.entities.get(clazz);
         String sql = "SELECT * FROM " + metadata.getTableName();
         List<T> entities = new ArrayList<>();

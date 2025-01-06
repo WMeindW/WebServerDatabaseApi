@@ -2,15 +2,13 @@ package cz.meind.database.entities;
 
 import cz.meind.interfaces.*;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Entity(tableName = "users")
 public class User {
 
     @Column(name = "user_id", id = true)
-    private long userId;
+    private Integer userId;
 
     @Column(name = "username")
     private String username;
@@ -36,11 +34,11 @@ public class User {
         this.orders = orders;
     }
 
-    public Long getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(Integer userId) {
         this.userId = userId;
     }
 

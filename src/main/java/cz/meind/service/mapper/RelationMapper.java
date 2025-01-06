@@ -55,6 +55,7 @@ public class RelationMapper {
         String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
         String sql = "INSERT INTO " + tableName + " (" + idColumn + ", " + relationField.getAnnotation(ManyToMany.class).targetColumn() + ") VALUES (?,?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(RelationMapper.class, sql);
             Field idFieldRelation = mapper.getIdField(o.getClass());
             idFieldRelation.setAccessible(true);
             stmt.setObject(1, id);
