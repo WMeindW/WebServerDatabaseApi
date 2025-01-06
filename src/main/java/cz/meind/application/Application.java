@@ -3,6 +3,7 @@ package cz.meind.application;
 import cz.meind.database.DatabaseContext;
 import cz.meind.logger.Logger;
 import cz.meind.service.Console;
+import cz.meind.service.mapper.ObjectMapper;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,6 +25,8 @@ public class Application {
 
     public static String dbPassword = "password";
 
+    public static ObjectMapper mapper;
+
     /**
      * Initializes and starts the application components including the logger, configuration,
      * daemon thread, and server.
@@ -42,6 +45,8 @@ public class Application {
     private static void initializeDatabaseProfile() {
         Application.logger.info(Application.class, "Initializing database profile.");
         database = new DatabaseContext();
+        Application.logger.info(Application.class, "Creating connection.");
+        mapper = new ObjectMapper(Application.database.getConnection());
     }
 
 

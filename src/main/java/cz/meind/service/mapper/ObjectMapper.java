@@ -1,4 +1,4 @@
-package cz.meind.service;
+package cz.meind.service.mapper;
 
 import cz.meind.application.Application;
 import cz.meind.database.EntityMetadata;
@@ -10,7 +10,6 @@ import cz.meind.interfaces.ManyToOne;
 
 import java.lang.reflect.Field;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.*;
 
@@ -105,7 +104,7 @@ public class ObjectMapper {
                         Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
                         idField.set(entity, convertedKey);
                     } else {
-                        Application.logger.error(ObjectMapper.class,new IllegalArgumentException("Unsupported id field type: " + idFieldType));
+                        Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Unsupported id field type: " + idFieldType));
                     }
                 }
             }
@@ -122,6 +121,7 @@ public class ObjectMapper {
         List<T> entities = new ArrayList<>();
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(ObjectMapper.class, sql);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     T entity = clazz.getDeclaredConstructor().newInstance();
@@ -129,10 +129,10 @@ public class ObjectMapper {
                     entities.add(entity);
                 }
             } catch (Exception e) {
-                Application.logger.error(ObjectMapper.class,e);
+                Application.logger.error(ObjectMapper.class, e);
             }
-        } catch (SQLException  e) {
-            Application.logger.error(ObjectMapper.class,e);
+        } catch (SQLException e) {
+            Application.logger.error(ObjectMapper.class, e);
         }
 
         return entities;
@@ -146,8 +146,9 @@ public class ObjectMapper {
             return null;
         }
         String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
-    
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(ObjectMapper.class, sql);
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 T entity = clazz.getDeclaredConstructor().newInstance();
@@ -172,6 +173,7 @@ public class ObjectMapper {
         String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(ObjectMapper.class, sql);
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {

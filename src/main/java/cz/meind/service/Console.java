@@ -1,11 +1,11 @@
 package cz.meind.service;
 
-import cz.meind.application.Application;
-import cz.meind.database.entities.User;
+import cz.meind.database.entities.Order;
+
+import static cz.meind.application.Application.mapper;
 
 public class Console {
     public static void run(){
-        ObjectMapper mapper = new ObjectMapper(Application.database.getConnection());
-        System.out.println(mapper.fetchAll(User.class));
+        System.out.println(mapper.fetchAll(Order.class));
     }
 }

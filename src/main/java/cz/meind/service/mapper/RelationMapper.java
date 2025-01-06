@@ -1,4 +1,4 @@
-package cz.meind.service;
+package cz.meind.service.mapper;
 
 import cz.meind.application.Application;
 import cz.meind.interfaces.ManyToMany;
@@ -24,12 +24,13 @@ public class RelationMapper {
         this.mapper = mapper;
     }
 
-    public <T> Collection<T> fetchAllRelations(String id, Field relationField){
+    public <T> Collection<T> fetchAllRelations(String id, Field relationField) {
         List<T> entities = new ArrayList<>();
         String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
         String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
         String sql = "SELECT * FROM " + tableName + " WHERE " + idColumn + " = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(RelationMapper.class, sql);
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 ParameterizedType type = (ParameterizedType) relationField.getGenericType();
@@ -40,10 +41,10 @@ public class RelationMapper {
                     entities.add(entity);
                 }
             } catch (Exception e) {
-                Application.logger.error(RelationMapper.class,e);
+                Application.logger.error(RelationMapper.class, e);
             }
         } catch (SQLException e) {
-            Application.logger.error(RelationMapper.class,e);
+            Application.logger.error(RelationMapper.class, e);
         }
         return entities;
 
@@ -60,7 +61,7 @@ public class RelationMapper {
             stmt.setObject(2, idFieldRelation.get(o));
             stmt.executeUpdate();
         } catch (SQLException | IllegalAccessException e) {
-            Application.logger.error(RelationMapper.class,e);
+            Application.logger.error(RelationMapper.class, e);
         }
     }
 
