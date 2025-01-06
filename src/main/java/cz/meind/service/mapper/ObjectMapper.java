@@ -39,12 +39,11 @@ public class ObjectMapper {
         Field idField = getIdField(clazz);
         if (idField == null) {
             Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field"));
+            return null;
         }
         idField.setAccessible(true);
-        if (idField.get(entity) == null)
-            idField.set(entity, 0);
-        if (Integer.parseInt(idField.get(entity).toString()) != 0)
-            return (Integer) idField.get(entity);
+        if (idField.get(entity) == null) idField.set(entity, 0);
+        if (Integer.parseInt(idField.get(entity).toString()) != 0) return (Integer) idField.get(entity);
 
         StringBuilder sql = new StringBuilder("INSERT INTO ").append(metadata.getTableName()).append(" (");
         StringBuilder values = new StringBuilder(" VALUES (");
@@ -258,4 +257,3 @@ public class ObjectMapper {
         throw new IllegalArgumentException("Unsupported number type: " + targetType);
     }
 }
-
