@@ -1,10 +1,8 @@
 package cz.meind.database.entities;
 
-import cz.meind.interfaces.Column;
-import cz.meind.interfaces.Entity;
-import cz.meind.interfaces.ManyToMany;
-import cz.meind.interfaces.ManyToOne;
+import cz.meind.interfaces.*;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity(tableName = "Payment")
@@ -17,7 +15,7 @@ public class Payment {
     private int orderId;
 
     @Column(name = "payment_date")
-    private Date paymentDate;
+    private LocalDateTime paymentDate;
 
     @Column(name = "amount")
     private float amount;
@@ -26,6 +24,7 @@ public class Payment {
     private String paymentType;
 
     @ManyToOne
+    @JoinColumn(name = "order_id")
     private Order order;
 
     public Order getOrder() {
@@ -52,11 +51,11 @@ public class Payment {
         this.orderId = orderId;
     }
 
-    public Date getPaymentDate() {
+    public LocalDateTime getPaymentDate() {
         return paymentDate;
     }
 
-    public void setPaymentDate(Date paymentDate) {
+    public void setPaymentDate(LocalDateTime paymentDate) {
         this.paymentDate = paymentDate;
     }
 
@@ -74,5 +73,17 @@ public class Payment {
 
     public void setPaymentType(String paymentType) {
         this.paymentType = paymentType;
+    }
+
+    @Override
+    public String toString() {
+        return "Payment{" +
+                "id=" + id +
+                ", orderId=" + orderId +
+                ", paymentDate=" + paymentDate +
+                ", amount=" + amount +
+                ", paymentType='" + paymentType + '\'' +
+                ", order=" + order +
+                '}';
     }
 }
