@@ -1,70 +1,82 @@
 package cz.meind.database.entities;
 
-import cz.meind.interfaces.Column;
-import cz.meind.interfaces.Entity;
-import cz.meind.interfaces.ManyToMany;
+import cz.meind.interfaces.*;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.util.Collection;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.List;
 
-@Entity(tableName = "orders")
+@Entity(tableName = "Orders")
 public class Order {
-    @Column(name = "order_id", id = true)
-    private int orderId;
 
-    @Column(name ="order_date")
-    private Timestamp orderDate;
+    @Column(name = "id", id = true)
+    private Integer id;
 
-    @Column(name = "total_amount")
-    private BigDecimal orderTotal;
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
 
-    @ManyToMany(joinTable = "user_orders", mappedBy = "order_id", targetColumn = "user_id")
-    private Collection<User> users;
+    @Column(name = "order_date")
+    private LocalDateTime orderDate;
 
-    public Integer getOrderId() {
-        return orderId;
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "total_price")
+    private float totalPrice;
+
+    @ManyToMany(joinTable = "Order_Product", mappedBy = "order_id", targetColumn = "product_id")
+    private List<Product> products;
+
+    public List<Product> getProducts() {
+        return products;
     }
 
-    public void setOrderId(int orderId) {
-        this.orderId = orderId;
+    public void setProducts(List<Product> products) {
+        this.products = products;
     }
 
-    public Timestamp getOrderDate() {
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public LocalDateTime getOrderDate() {
         return orderDate;
     }
 
-    public void setOrderDate(Timestamp orderDate) {
+    public void setOrderDate(LocalDateTime orderDate) {
         this.orderDate = orderDate;
     }
 
-    public BigDecimal getOrderTotal() {
-        return orderTotal;
+    public String getStatus() {
+        return status;
     }
 
-    public void setOrderTotal(BigDecimal orderTotal) {
-        this.orderTotal = orderTotal;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
-    public void setOrderId(Integer orderId) {
-        this.orderId = orderId;
+    public float getTotalPrice() {
+        return totalPrice;
     }
 
-    public Collection<User> getUsers() {
-        return users;
-    }
-
-    public void setUsers(Collection<User> users) {
-        this.users = users;
+    public void setTotalPrice(float totalPrice) {
+        this.totalPrice = totalPrice;
     }
 
     @Override
     public String toString() {
         return "Order{" +
-                "orderId=" + orderId +
-                ", orderDate=" + orderDate.toLocalDateTime() +
-                ", orderTotal=" + orderTotal +
+                "id=" + id +
+                ", customer=" + customer +
+                ", orderDate=" + orderDate +
+                ", status='" + status + '\'' +
+                ", totalPrice=" + totalPrice +
+                ", products=" + products +
                 '}';
     }
 }
+
