@@ -10,8 +10,5 @@ import static cz.meind.application.Application.mapper;
 public class Console {
     public static void run(){
         System.out.println(mapper.fetchAll(Order.class));
-        System.out.println(mapper.fetchAll(Customer.class));
-        System.out.println(mapper.fetchAll(Payment.class));
-        System.out.println(mapper.fetchAll(Product.class));
     }
 }

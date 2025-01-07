@@ -59,8 +59,10 @@ public class ObjectMapper {
             } else if (relationField.isAnnotationPresent(ManyToMany.class)) {
                 for (Object o : (Collection<?>) relationField.get(entity)) {
                     Field idFieldRelation = getIdField(o.getClass());
-                    if (idFieldRelation == null)
+                    if (idFieldRelation == null) {
                         Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
+                        continue;
+                    }
                     idFieldRelation.setAccessible(true);
                     if (idFieldRelation.get(o).toString().equals("0"))
                         Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
@@ -73,6 +75,7 @@ public class ObjectMapper {
             sql.append(columnEntry.getKey()).append(",");
             values.append("?,");
             Field field = getField(clazz, columnEntry.getValue());
+            if (field == null) continue;
             field.setAccessible(true);
             params.add(field.get(entity));
         }
@@ -183,6 +186,7 @@ public class ObjectMapper {
                         String columnName = columnEntry.getKey();
                         String fieldName = columnEntry.getValue();
                         Field field = getField(clazz, fieldName);
+                        if (field == null) continue;
                         field.setAccessible(true);
                         field.set(entity, rs.getObject(columnName));
                     }
@@ -208,17 +212,17 @@ public class ObjectMapper {
             String columnName = columnEntry.getKey();
             String fieldName = columnEntry.getValue();
             Field field = getField(clazz, fieldName);
-            field.setAccessible(true);
-            field.set(entity, rs.getObject(columnName));
+            if (field == null) continue;
+            Utils.set(field, entity, rs.getObject(columnName));
         }
         for (Map.Entry<String, Field> relationEntry : metadata.getRelations().entrySet()) {
             Field relationField = relationEntry.getValue();
             relationField.setAccessible(true);
             String relationType = relationEntry.getKey();
             if (relationType.equals("ManyToOne")) {
-                relationField.set(entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
+                Utils.set(relationField, entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
             } else if (relationType.equals("ManyToMany")) {
-                relationField.set(entity, relationMapper.fetchAllRelations(idField.get(entity).toString(), relationField));
+                Utils.set(relationField, entity, relationMapper.fetchAllRelations(idField.get(entity).toString(), relationField));
             }
         }
     }
@@ -236,8 +240,9 @@ public class ObjectMapper {
         try {
             return clazz.getDeclaredField(fieldName);
         } catch (NoSuchFieldException e) {
-            throw new RuntimeException("Field not found: " + fieldName, e);
+            Application.logger.error(ObjectMapper.class, new RuntimeException("Field not found: " + fieldName, e));
         }
+        return null;
     }
 
     private Object castNumberToType(Number number, Class<?> targetType) {
