@@ -5,7 +5,6 @@ import cz.meind.interfaces.Entity;
 import cz.meind.interfaces.JoinColumn;
 import cz.meind.interfaces.ManyToOne;
 
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 

@@ -3,6 +3,9 @@ package cz.meind.database.entities;
 
 import cz.meind.interfaces.Column;
 import cz.meind.interfaces.Entity;
+import cz.meind.interfaces.ManyToMany;
+
+import java.util.List;
 
 @Entity(tableName = "Product")
 public class Product {
@@ -21,6 +24,9 @@ public class Product {
 
     @Column(name = "stock")
     private int stock;
+
+    @ManyToMany(joinTable = "Order_Product", mappedBy = "product_id", targetColumn = "order_id")
+    private List<Order> orders;
 
     public int getId() {
         return id;
@@ -64,13 +70,7 @@ public class Product {
 
     @Override
     public String toString() {
-        return "Product{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", price=" + price +
-                ", stock=" + stock +
-                '}';
+        return "Product{" + "id=" + id + ", name='" + name + '\'' + ", description='" + description + '\'' + ", price=" + price + ", stock=" + stock + ", orders=" + orders + '}';
     }
 }
 
