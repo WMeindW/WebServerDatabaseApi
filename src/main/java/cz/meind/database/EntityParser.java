@@ -20,12 +20,16 @@ public class EntityParser {
                 metadata.addColumn(columnName, field.getName());
             }
 
-            if (field.isAnnotationPresent(ManyToOne.class)) {
-                metadata.addRelation("ManyToOne", field);
+            if (field.isAnnotationPresent(OneToMany.class)) {
+                metadata.addRelation("OneToMany", field);
             }
 
             if (field.isAnnotationPresent(ManyToMany.class)) {
                 metadata.addRelation("ManyToMany", field);
+            }
+
+            if (field.isAnnotationPresent(ManyToOne.class)) {
+                metadata.addRelation("ManyToOne", field);
             }
         }
 

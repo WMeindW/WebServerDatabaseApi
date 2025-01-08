@@ -2,9 +2,12 @@ package cz.meind.database.entities;
 
 import cz.meind.interfaces.Column;
 import cz.meind.interfaces.Entity;
+import cz.meind.interfaces.JoinColumn;
+import cz.meind.interfaces.ManyToOne;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.List;
 
 @Entity(tableName = "Customer")
 public class Customer {
@@ -26,6 +29,10 @@ public class Customer {
 
     @Column(name = "registration_date")
     private Date registrationDate;
+
+    @ManyToOne(tableName = "Orders")
+    @JoinColumn(name = "customer_id")
+    private List<Order> orders;
 
     public int getId() {
         return id;
@@ -75,8 +82,16 @@ public class Customer {
         this.registrationDate = registrationDate;
     }
 
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
+    }
+
     @Override
     public String toString() {
-        return "Customer{" + "registrationDate=" + registrationDate + ", phone='" + phone + '\'' + ", address='" + address + '\'' + ", email='" + email + '\'' + ", name='" + name + '\'' + ", id=" + id + '}';
+        return "Customer{" + "id=" + id + ", name='" + name + '\'' + ", email='" + email + '\'' + ", address='" + address + '\'' + ", phone='" + phone + '\'' + ", registrationDate=" + registrationDate + ", orders=" + orders + '}';
     }
 }

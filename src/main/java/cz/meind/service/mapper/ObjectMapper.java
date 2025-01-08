@@ -5,7 +5,7 @@ import cz.meind.database.EntityMetadata;
 import cz.meind.interfaces.Column;
 import cz.meind.interfaces.JoinColumn;
 import cz.meind.interfaces.ManyToMany;
-import cz.meind.interfaces.ManyToOne;
+import cz.meind.interfaces.OneToMany;
 
 
 import java.lang.reflect.Field;
@@ -53,7 +53,7 @@ public class ObjectMapper {
         for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
             Field relationField = relations.getValue();
             relationField.setAccessible(true);
-            if (relationField.isAnnotationPresent(ManyToOne.class)) {
+            if (relationField.isAnnotationPresent(OneToMany.class)) {
                 Integer id = completeSave(relationField.get(entity));
                 if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
             } else if (relationField.isAnnotationPresent(ManyToMany.class)) {
@@ -194,7 +194,7 @@ public class ObjectMapper {
                         Field relationField = relationEntry.getValue();
                         relationField.setAccessible(true);
                         String relationType = relationEntry.getKey();
-                        if (relationType.equals("ManyToOne")) {
+                        if (relationType.equals("OneToMany")) {
                             relationField.set(entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
                         }
                     }
@@ -219,10 +219,12 @@ public class ObjectMapper {
             Field relationField = relationEntry.getValue();
             relationField.setAccessible(true);
             String relationType = relationEntry.getKey();
-            if (relationType.equals("ManyToOne")) {
+            if (relationType.equals("OneToMany")) {
                 Utils.set(relationField, entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
             } else if (relationType.equals("ManyToMany")) {
-                Utils.set(relationField, entity, relationMapper.fetchAllRelations(idField.get(entity).toString(), relationField));
+                Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToMany(idField.get(entity).toString(), relationField));
+            } else if (relationType.equals("ManyToOne")) {
+                Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToOne(idField.get(entity).toString(), relationField));
             }
         }
     }
@@ -236,7 +238,7 @@ public class ObjectMapper {
         return null;
     }
 
-    private Field getField(Class<?> clazz, String fieldName) {
+    Field getField(Class<?> clazz, String fieldName) {
         try {
             return clazz.getDeclaredField(fieldName);
         } catch (NoSuchFieldException e) {

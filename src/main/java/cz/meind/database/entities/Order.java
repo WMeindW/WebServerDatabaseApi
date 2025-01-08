@@ -2,7 +2,6 @@ package cz.meind.database.entities;
 
 import cz.meind.interfaces.*;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class Order {
     @Column(name = "id", id = true)
     private Integer id;
 
-    @ManyToOne
+    @OneToMany
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
@@ -64,7 +63,6 @@ public class Order {
     public String toString() {
         return "Order{" +
                 "id=" + id +
-                ", customer=" + customer +
                 ", orderDate=" + orderDate +
                 ", status='" + status + '\'' +
                 ", totalPrice=" + totalPrice +

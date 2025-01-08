@@ -3,7 +3,6 @@ package cz.meind.database.entities;
 import cz.meind.interfaces.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity(tableName = "Payment")
 public class Payment {
@@ -23,7 +22,7 @@ public class Payment {
     @Column(name = "payment_type")
     private String paymentType;
 
-    @ManyToOne
+    @OneToMany
     @JoinColumn(name = "order_id")
     private Order order;
 
