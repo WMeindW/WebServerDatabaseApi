@@ -35,6 +35,51 @@ public class ObjectMapper {
         return null;
     }
 
+    public void update(Object entity) {
+        try {
+            Class<?> clazz = entity.getClass();
+            EntityMetadata metadata = Application.database.entities.get(clazz);
+            Field idField = getIdField(clazz);
+
+            if (idField == null) {
+                Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field"));
+                return;
+            }
+            idField.setAccessible(true);
+            Object idValue = idField.get(entity);
+            if (idValue == null || Integer.parseInt(idValue.toString()) == 0) {
+                Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Cannot update entity without a valid ID"));
+                return;
+            }
+
+            StringBuilder sql = new StringBuilder("UPDATE ").append(metadata.getTableName()).append(" SET ");
+            List<Object> params = new ArrayList<>();
+
+            for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
+                Field field = getField(clazz, columnEntry.getValue());
+                if (field == null || field.getName().equals(idField.getName())) continue; // Skip ID field
+
+                field.setAccessible(true);
+                sql.append(columnEntry.getKey()).append(" = ?, ");
+                params.add(field.get(entity));
+            }
+
+            sql.setLength(sql.length() - 2); // Remove trailing comma and space
+            sql.append(" WHERE ").append(idField.getAnnotation(Column.class).name()).append(" = ?");
+            params.add(idValue);
+
+            try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+                Application.logger.info(ObjectMapper.class, sql.toString());
+                for (int i = 0; i < params.size(); i++) {
+                    stmt.setObject(i + 1, params.get(i));
+                }
+                stmt.executeUpdate();
+            }
+        } catch (Exception e) {
+            Application.logger.error(ObjectMapper.class, e);
+        }
+    }
+
     public <T> List<T> fetchAll(Class<T> clazz) {
         EntityMetadata metadata = Application.database.entities.get(clazz);
         String sql = "SELECT * FROM " + metadata.getTableName();

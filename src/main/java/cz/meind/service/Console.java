@@ -1,6 +1,7 @@
 package cz.meind.service;
 
 import cz.meind.application.Application;
+import cz.meind.database.entities.Customer;
 import cz.meind.database.entities.Order;
 import cz.meind.database.entities.Payment;
 
@@ -18,13 +19,16 @@ public class Console {
     public static void run() {
         fillClassMap();
         fillActionMap();
+        Customer c = mapper.fetchById(Customer.class, 1);
+        c.setName("Koště");
+        mapper.update(c);
         do {
             try {
                 System.out.print(print(actions));
                 Integer command = Integer.valueOf(scanner.next().strip());
                 System.out.println(actions.get(command));
-            } catch (Exception e){
-                Application.logger.error(Console.class,"Exception occurred, wrong input");
+            } catch (Exception e) {
+                Application.logger.error(Console.class, "Exception occurred, wrong input");
             }
         } while (true);
     }
