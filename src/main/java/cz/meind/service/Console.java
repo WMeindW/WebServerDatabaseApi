@@ -18,13 +18,23 @@ public class Console {
     public static void run() {
         fillClassMap();
         fillActionMap();
-        mapper.deleteById(Order.class, 1);
+        do {
+            try {
+                System.out.print(print(actions));
+                Integer command = Integer.valueOf(scanner.next().strip());
+                System.out.println(actions.get(command));
+            } catch (Exception e){
+                Application.logger.error(Console.class,"Exception occurred, wrong input");
+            }
+        } while (true);
     }
 
     private static String print(HashMap<Integer, String> map) {
         StringBuilder sb = new StringBuilder();
+        sb.append("\n");
         for (Map.Entry<Integer, String> entry : map.entrySet())
             sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        sb.append("Choose: ");
         return sb.toString();
     }
 
@@ -36,8 +46,7 @@ public class Console {
     private static void fillActionMap() {
         ArrayList<Method> methods = new ArrayList<>();
         for (Method method : mapper.getClass().getDeclaredMethods())
-            if (Modifier.isPublic(method.getModifiers()))
-                methods.add(method);
+            if (Modifier.isPublic(method.getModifiers())) methods.add(method);
         for (int i = 0; i < methods.size(); i++)
             actions.put(i + 1, methods.get(i).getName());
     }
