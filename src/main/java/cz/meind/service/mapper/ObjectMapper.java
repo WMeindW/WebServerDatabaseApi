@@ -64,7 +64,7 @@ public class ObjectMapper {
                         continue;
                     }
                     idFieldRelation.setAccessible(true);
-                    if (idFieldRelation.get(o).toString().equals("0"))
+                    if (idFieldRelation.get(o).toString().equals("0") || idFieldRelation.get(o) == null)
                         Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
                     mtm.put(o, relationField);
                 }
@@ -96,24 +96,9 @@ public class ObjectMapper {
                 stmt.setObject(i + 1, params.get(i));
             }
             stmt.executeUpdate();
-
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    idField.setAccessible(true);
-
-                    Object generatedKey = generatedKeys.getObject(1); // Get the generated key
-                    Class<?> idFieldType = idField.getType();         // Determine the field's type
-
-                    if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
-                        Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
-                        Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
-                        idField.set(entity, convertedKey);
-                    } else {
-                        Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Unsupported id field type: " + idFieldType));
-                    }
-                }
-            }
+            saveGeneratedKeys(entity, idField, stmt);
         }
+
         for (Map.Entry<Object, Field> m : mtm.entrySet()) {
             relationMapper.saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
         }
@@ -262,5 +247,26 @@ public class ObjectMapper {
             return number.byteValue();
         }
         throw new IllegalArgumentException("Unsupported number type: " + targetType);
+    }
+
+    private void saveGeneratedKeys(Object entity, Field idField, PreparedStatement stmt) {
+        try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+            if (generatedKeys.next()) {
+                idField.setAccessible(true);
+
+                Object generatedKey = generatedKeys.getObject(1); // Get the generated key
+                Class<?> idFieldType = idField.getType();         // Determine the field's type
+
+                if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
+                    Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
+                    Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
+                    idField.set(entity, convertedKey);
+                } else {
+                    Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Unsupported id field type: " + idFieldType));
+                }
+            }
+        } catch (Exception e) {
+            Application.logger.error(ObjectMapper.class, e);
+        }
     }
 }

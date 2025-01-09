@@ -27,6 +27,26 @@ public class Order {
     @ManyToMany(joinTable = "Order_Product", mappedBy = "order_id", targetColumn = "product_id")
     private List<Product> products;
 
+    @ManyToOne(tableName = "Payment")
+    @JoinColumn(name = "order_id")
+    private List<Payment> payment;
+
+    public List<Payment> getPayment() {
+        return payment;
+    }
+
+    public void setPayment(List<Payment> payment) {
+        this.payment = payment;
+    }
+
+    public LocalDateTime getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(LocalDateTime orderDate) {
+        this.orderDate = orderDate;
+    }
+
     public List<Product> getProducts() {
         return products;
     }
@@ -61,7 +81,7 @@ public class Order {
 
     @Override
     public String toString() {
-        return "Order{" + "id=" + id + ", customer=" + customer + ", orderDate=" + orderDate + ", status='" + status + '\'' + ", totalPrice=" + totalPrice + ", products=" + products + '}';
+        return "Order{" + "id=" + id + ", customer=" + customer + ", orderDate=" + orderDate + ", status='" + status + '\'' + ", totalPrice=" + totalPrice + ", products=" + products + ", payment=" + payment + '}';
     }
 }
 

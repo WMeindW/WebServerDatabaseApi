@@ -10,9 +10,6 @@ public class Payment {
     @Column(name = "id", id = true)
     private Integer id;
 
-    @Column(name = "order_id")
-    private int orderId;
-
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
 
@@ -42,14 +39,6 @@ public class Payment {
         this.id = id;
     }
 
-    public int getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(int orderId) {
-        this.orderId = orderId;
-    }
-
     public LocalDateTime getPaymentDate() {
         return paymentDate;
     }
@@ -76,6 +65,6 @@ public class Payment {
 
     @Override
     public String toString() {
-        return "Payment{" + "id=" + id + ", orderId=" + orderId + ", paymentDate=" + paymentDate + ", amount=" + amount + ", paymentType='" + paymentType + '\'' + ", order=" + order + '}';
+        return "Payment{" + "id=" + id + ", paymentDate=" + paymentDate + ", amount=" + amount + ", paymentType='" + paymentType + '\'' + ", order=" + order + '}';
     }
 }
