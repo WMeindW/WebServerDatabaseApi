@@ -15,7 +15,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.Manifest;
+
+import static cz.meind.service.mapper.Utils.getField;
+import static cz.meind.service.mapper.Utils.getIdField;
 
 public class RelationMapper {
 
@@ -65,7 +67,8 @@ public class RelationMapper {
             try (ResultSet rs = stmt.executeQuery()) {
                 ParameterizedType type = (ParameterizedType) relationField.getGenericType();
                 Class<T> clazz = (Class<T>) type.getActualTypeArguments()[0];
-                Field idField = mapper.getIdField(clazz);
+                Field idField = getIdField(clazz);
+                if (idField == null) return new ArrayList<>();
                 idField.setAccessible(true);
                 EntityMetadata metadata = Application.database.entities.get(clazz);
                 while (rs.next()) {
@@ -73,7 +76,8 @@ public class RelationMapper {
                     for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
                         String columnName = columnEntry.getKey();
                         String fieldName = columnEntry.getValue();
-                        Field field = mapper.getField(clazz, fieldName);
+                        Field field = getField(clazz, fieldName);
+                        if (field == null) continue;
                         field.setAccessible(true);
                         Utils.set(field, entity, rs.getObject(columnName));
                     }
@@ -105,7 +109,8 @@ public class RelationMapper {
         String sql = "INSERT INTO " + tableName + " (" + idColumn + ", " + relationField.getAnnotation(ManyToMany.class).targetColumn() + ") VALUES (?,?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             Application.logger.info(RelationMapper.class, sql);
-            Field idFieldRelation = mapper.getIdField(o.getClass());
+            Field idFieldRelation = getIdField(o.getClass());
+            if (idFieldRelation == null) return;
             idFieldRelation.setAccessible(true);
             stmt.setObject(1, id);
             stmt.setObject(2, idFieldRelation.get(o));

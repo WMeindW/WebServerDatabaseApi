@@ -13,6 +13,9 @@ import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
 
+import static cz.meind.service.mapper.Utils.getField;
+import static cz.meind.service.mapper.Utils.getIdField;
+
 
 public class ObjectMapper {
     private final Connection connection;
@@ -204,49 +207,15 @@ public class ObjectMapper {
             Field relationField = relationEntry.getValue();
             relationField.setAccessible(true);
             String relationType = relationEntry.getKey();
-            if (relationType.equals("OneToMany")) {
-                Utils.set(relationField, entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
-            } else if (relationType.equals("ManyToMany")) {
-                Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToMany(idField.get(entity).toString(), relationField));
-            } else if (relationType.equals("ManyToOne")) {
-                Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToOne(idField.get(entity).toString(), relationField));
+            switch (relationType) {
+                case "OneToMany" ->
+                        Utils.set(relationField, entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
+                case "ManyToMany" ->
+                        Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToMany(idField.get(entity).toString(), relationField));
+                case "ManyToOne" ->
+                        Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToOne(idField.get(entity).toString(), relationField));
             }
         }
-    }
-
-    Field getIdField(Class<?> clazz) {
-        for (Field field : clazz.getDeclaredFields()) {
-            if (field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).id()) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    Field getField(Class<?> clazz, String fieldName) {
-        try {
-            return clazz.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
-            Application.logger.error(ObjectMapper.class, new RuntimeException("Field not found: " + fieldName, e));
-        }
-        return null;
-    }
-
-    private Object castNumberToType(Number number, Class<?> targetType) {
-        if (targetType == int.class || targetType == Integer.class) {
-            return number.intValue();
-        } else if (targetType == long.class || targetType == Long.class) {
-            return number.longValue();
-        } else if (targetType == double.class || targetType == Double.class) {
-            return number.doubleValue();
-        } else if (targetType == float.class || targetType == Float.class) {
-            return number.floatValue();
-        } else if (targetType == short.class || targetType == Short.class) {
-            return number.shortValue();
-        } else if (targetType == byte.class || targetType == Byte.class) {
-            return number.byteValue();
-        }
-        throw new IllegalArgumentException("Unsupported number type: " + targetType);
     }
 
     private void saveGeneratedKeys(Object entity, Field idField, PreparedStatement stmt) {
@@ -259,7 +228,7 @@ public class ObjectMapper {
 
                 if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
                     Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
-                    Object convertedKey = castNumberToType(keyAsNumber, idFieldType);
+                    Object convertedKey = Utils.castNumberToType(keyAsNumber, idFieldType);
                     idField.set(entity, convertedKey);
                 } else {
                     Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Unsupported id field type: " + idFieldType));
