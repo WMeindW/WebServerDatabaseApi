@@ -19,9 +19,6 @@ public class Console {
     public static void run() {
         fillClassMap();
         fillActionMap();
-        Customer c = mapper.fetchById(Customer.class, 1);
-        c.setName("Koště");
-        mapper.update(c);
         do {
             try {
                 System.out.print(print(actions));
