@@ -131,6 +131,7 @@ public class ObjectMapper {
         return entities;
     }
 
+
     public <T> T fetchById(Class<T> clazz, Integer id) {
         EntityMetadata metadata = Application.database.entities.get(clazz);
         Field idColumn = getIdField(clazz);
@@ -148,6 +149,8 @@ public class ObjectMapper {
                 if (rs.next()) {
                     mapFields(entity, clazz, rs);
                     return entity;
+                } else {
+                    Application.logger.error(ObjectMapper.class, "No entity with id " + id);
                 }
             } catch (Exception e) {
                 Application.logger.error(ObjectMapper.class, e);
@@ -165,14 +168,7 @@ public class ObjectMapper {
             Application.logger.error(ObjectMapper.class, new SQLException("No id column"));
             return;
         }
-        for (Map.Entry<String, Field> relationEntry : metadata.getRelations().entrySet()) {
-            Field relationField = relationEntry.getValue();
-            relationField.setAccessible(true);
-            String relationType = relationEntry.getKey();
-            if (relationType.equals("ManyToMany")) {
-                System.out.println(relationField.getName());
-            }
-        }
+
         String sql = "DELETE FROM " + metadata.getTableName() + " WHERE " + idField.getAnnotation(Column.class).name() + " = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             Application.logger.info(ObjectMapper.class, sql);

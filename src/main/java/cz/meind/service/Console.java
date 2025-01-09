@@ -18,10 +18,10 @@ public class Console {
     public static void run() {
         fillClassMap();
         fillActionMap();
-        mapper.deleteById(Order.class,1);
+        mapper.deleteById(Order.class, 1);
     }
 
-    private static String print(HashMap<Integer,String> map) {
+    private static String print(HashMap<Integer, String> map) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<Integer, String> entry : map.entrySet())
             sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");

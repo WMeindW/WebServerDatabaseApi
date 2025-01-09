@@ -30,6 +30,19 @@ public class RelationMapper {
         this.mapper = mapper;
     }
 
+    public void deleteAllManyToManyById(Integer id, Field relationField) throws IllegalAccessException {
+        String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
+        String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
+        String sql = "DELETE FROM " + tableName + " WHERE " + idColumn + " = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(RelationMapper.class, sql);
+            stmt.setObject(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            Application.logger.error(RelationMapper.class, e);
+        }
+    }
+
     public <T> List<T> fetchAllRelationsManyToMany(String id, Field relationField) {
         List<T> entities = new ArrayList<>();
         String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
