@@ -158,6 +158,32 @@ public class ObjectMapper {
         return null;
     }
 
+    public void deleteById(Class<?> clazz, Integer id) {
+        EntityMetadata metadata = Application.database.entities.get(clazz);
+        Field idField = getIdField(clazz);
+        if (idField == null) {
+            Application.logger.error(ObjectMapper.class, new SQLException("No id column"));
+            return;
+        }
+        for (Map.Entry<String, Field> relationEntry : metadata.getRelations().entrySet()) {
+            Field relationField = relationEntry.getValue();
+            relationField.setAccessible(true);
+            String relationType = relationEntry.getKey();
+            if (relationType.equals("ManyToMany")) {
+                System.out.println(relationField.getName());
+            }
+        }
+        String sql = "DELETE FROM " + metadata.getTableName() + " WHERE " + idField.getAnnotation(Column.class).name() + " = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(ObjectMapper.class, sql);
+            stmt.setObject(1, id);
+            stmt.executeUpdate();
+        } catch (SQLIntegrityConstraintViolationException e) {
+            Application.logger.error(ObjectMapper.class, new SQLException("Delete relations first, constraint failed"));
+        } catch (Exception e) {
+            Application.logger.error(ObjectMapper.class, e);
+        }
+    }
 
     void fetchById(String id, Class<?> clazz, Object entity) throws Exception {
         EntityMetadata metadata = Application.database.entities.get(clazz);
@@ -223,11 +249,11 @@ public class ObjectMapper {
             if (generatedKeys.next()) {
                 idField.setAccessible(true);
 
-                Object generatedKey = generatedKeys.getObject(1); // Get the generated key
-                Class<?> idFieldType = idField.getType();         // Determine the field's type
+                Object generatedKey = generatedKeys.getObject(1);
+                Class<?> idFieldType = idField.getType();
 
                 if (Number.class.isAssignableFrom(idFieldType) || idFieldType.isPrimitive()) {
-                    Number keyAsNumber = (Number) generatedKey; // Ensure it's a Number
+                    Number keyAsNumber = (Number) generatedKey;
                     Object convertedKey = Utils.castNumberToType(keyAsNumber, idFieldType);
                     idField.set(entity, convertedKey);
                 } else {

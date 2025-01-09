@@ -1,6 +1,8 @@
 package cz.meind.service;
 
 import cz.meind.application.Application;
+import cz.meind.database.entities.Order;
+import cz.meind.database.entities.Payment;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -16,7 +18,7 @@ public class Console {
     public static void run() {
         fillClassMap();
         fillActionMap();
-        System.out.println(print(actions));
+        mapper.deleteById(Order.class,1);
     }
 
     private static String print(HashMap<Integer,String> map) {
