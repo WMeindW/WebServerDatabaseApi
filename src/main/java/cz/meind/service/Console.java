@@ -1,6 +1,7 @@
 package cz.meind.service;
 
 import cz.meind.database.entities.Customer;
+import cz.meind.database.entities.Product;
 
 import java.util.*;
 
@@ -13,7 +14,6 @@ public class Console {
     public static void run() {
         do {
             if (loggedIn) {
-                System.out.println("Logged in as: " + currentCustomer.getName());
                 System.out.print(printActions());
             } else {
                 System.out.print(printLogin());
@@ -97,14 +97,45 @@ public class Console {
         }
         loggedIn = true;
         currentCustomer = c;
+        System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
     private static void signup() {
-
+        String name;
+        String email;
+        String address;
+        String phone;
+        do {
+            System.out.print("Name:");
+            name = scanner.next().strip().replace(" ", "");
+            if (name.length() < 4 || name.length() > 8 || !name.matches("[a-zA-Z]*")) continue;
+            System.out.print("Email: [*@*.*]");
+            email = scanner.next().strip().replace(" ", "");
+            if (email.length() > 50 || !email.matches("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,6}$")) continue;
+            System.out.print("Address: ");
+            address = scanner.next().strip().replace(" ", "");
+            if (address.length() < 4 || address.length() > 50) continue;
+            System.out.print("Phone: ");
+            phone = scanner.next().strip().replace(" ", "");
+            if (phone.length() < 4 || phone.length() > 50 || !phone.matches("[+]*[0-9]*")) continue;
+            break;
+        } while (true);
+        Customer c = Actions.signup(name, email, address, phone);
+        if (c == null) {
+            System.err.println("Invalid signup.");
+            return;
+        }
+        currentCustomer = c;
+        loggedIn = true;
+        System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
     private static void viewProducts() {
-
+        List<Product> products = Actions.getProducts();
+        System.out.println("Available products:");
+        for (Product product : products) {
+            System.out.println("[" + product.getId() + "]" + product.getName() + " - " + product.getPrice() + " Kč");
+        }
     }
 
     private static void addToCart() {
