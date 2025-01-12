@@ -15,7 +15,6 @@ public class Console {
     private static List<Order> cart;
     private static List<Product> products;
     private static boolean inListing;
-    private static boolean inCart;
 
     public static void run() {
         products = Actions.getProducts();
