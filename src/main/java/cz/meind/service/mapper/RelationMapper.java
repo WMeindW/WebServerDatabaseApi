@@ -132,5 +132,4 @@ public class RelationMapper {
             Application.logger.error(RelationMapper.class, e);
         }
     }
-
 }

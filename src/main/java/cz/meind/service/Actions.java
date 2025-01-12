@@ -1,6 +1,7 @@
 package cz.meind.service;
 
 import cz.meind.database.entities.Customer;
+import cz.meind.database.entities.Order;
 import cz.meind.database.entities.Product;
 
 import java.util.Date;
@@ -33,5 +34,17 @@ public class Actions {
 
     public static List<Product> getProducts() {
         return mapper.fetchAll(Product.class);
+    }
+
+    public static Product getProductById(int id) {
+        return mapper.fetchById(Product.class, id);
+    }
+
+    public static void editOrder(Order order) {
+        mapper.update(order);
+    }
+
+    public static void saveOrder(Order order) {
+        mapper.save(order);
     }
 }

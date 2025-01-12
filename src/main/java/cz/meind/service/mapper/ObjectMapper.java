@@ -55,6 +55,8 @@ public class ObjectMapper {
             StringBuilder sql = new StringBuilder("UPDATE ").append(metadata.getTableName()).append(" SET ");
             List<Object> params = new ArrayList<>();
 
+            Map<Object, Field> mtm = new HashMap<>();
+
             for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
                 Field field = getField(clazz, columnEntry.getValue());
                 if (field == null || field.getName().equals(idField.getName())) continue; // Skip ID field
@@ -64,6 +66,27 @@ public class ObjectMapper {
                 params.add(field.get(entity));
             }
 
+            for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
+                Field relationField = relations.getValue();
+                relationField.setAccessible(true);
+                if (relationField.isAnnotationPresent(ManyToMany.class)) {
+                    for (Object o : (Collection<?>) relationField.get(entity)) {
+                        Field idFieldRelation = getIdField(o.getClass());
+                        if (idFieldRelation == null) {
+                            Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
+                            continue;
+                        }
+                        idFieldRelation.setAccessible(true);
+                        if (idFieldRelation.get(o).toString().equals("0") || idFieldRelation.get(o) == null)
+                            Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
+                        mtm.put(o, relationField);
+                    }
+                }
+            }
+
+            for (Map.Entry<Object, Field> m : mtm.entrySet()) {
+                relationMapper.saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
+            }
             sql.setLength(sql.length() - 2); // Remove trailing comma and space
             sql.append(" WHERE ").append(idField.getAnnotation(Column.class).name()).append(" = ?");
             params.add(idValue);
@@ -75,6 +98,7 @@ public class ObjectMapper {
                 }
                 stmt.executeUpdate();
             }
+            System.out.println(mtm);
         } catch (Exception e) {
             Application.logger.error(ObjectMapper.class, e);
         }
@@ -203,6 +227,7 @@ public class ObjectMapper {
         List<Object> params = new ArrayList<>();
         Map<Object, Field> mtm = new HashMap<>();
         Map<String, Integer> relationFields = new HashMap<>();
+
         for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
             Field relationField = relations.getValue();
             relationField.setAccessible(true);

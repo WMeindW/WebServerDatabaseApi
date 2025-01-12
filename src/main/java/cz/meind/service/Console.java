@@ -1,8 +1,10 @@
 package cz.meind.service;
 
 import cz.meind.database.entities.Customer;
+import cz.meind.database.entities.Order;
 import cz.meind.database.entities.Product;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 
@@ -10,11 +12,18 @@ public class Console {
     private static final Scanner scanner = new Scanner(System.in);
     private static Customer currentCustomer;
     private static boolean loggedIn = false;
+    private static List<Order> cart;
+    private static boolean inListing;
+    private static boolean inCart;
 
     public static void run() {
         do {
             if (loggedIn) {
-                System.out.print(printActions());
+                if (inListing) {
+                    System.out.print(printProductActions());
+                } else {
+                    System.out.print(printActions());
+                }
             } else {
                 System.out.print(printLogin());
             }
@@ -36,7 +45,7 @@ public class Console {
         return """
                 
                 [0] View products
-                [1] Add to cart
+                [1] View cart
                 [2] Pay
                 [3] Logout
                 [4] Delete account
@@ -44,6 +53,14 @@ public class Console {
                 
                 Command:""";
     }
+
+    private static String printProductActions() {
+        return """
+                [Exit] Exit
+                
+                Enter product id to add to cart:""";
+    }
+
 
     private static void execute(String command) {
         if (command.equalsIgnoreCase("exit")) System.exit(0);
@@ -66,25 +83,60 @@ public class Console {
                     System.err.println("Invalid command, number out of range.");
             }
         } else {
-            switch (choice) {
-                case 0:
-                    viewProducts();
-                    break;
-                case 1:
-                    addToCart();
-                    break;
-                case 2:
-                    pay();
-                    break;
-                case 3:
-                    logout();
-                    break;
-                case 4:
-                    deleteAccount();
-                    break;
-                default:
-                    System.err.println("Invalid command, number out of range.");
+            if (inListing) {
+                addToCart(choice);
+                inListing = false;
+            } else {
+                switch (choice) {
+                    case 0:
+                        viewProducts();
+                        break;
+                    case 1:
+                        viewCart();
+                        break;
+                    case 2:
+                        pay();
+                        break;
+                    case 3:
+                        logout();
+                        break;
+                    case 4:
+                        deleteAccount();
+                        break;
+                    default:
+                        System.err.println("Invalid command, number out of range.");
+                }
             }
+        }
+    }
+
+    private static void addToCart(int productId) {
+        if (cart.isEmpty()) {
+            Product p = Actions.getProductById(productId);
+            if (p == null) {
+                System.err.println("Invalid product id");
+                return;
+            }
+            List<Product> products = new ArrayList<>();
+            products.add(p);
+            Order order = new Order();
+            order.setOrderDate(LocalDateTime.now());
+            order.setStatus("new");
+            order.setCustomer(currentCustomer);
+            order.setTotalPrice(p.getPrice());
+            order.setProducts(products);
+            cart.add(order);
+            Actions.saveOrder(order);
+        } else {
+            Order order = cart.get(0);
+            Product p = Actions.getProductById(productId);
+            if (p == null) {
+                System.err.println("Invalid product id");
+                return;
+            }
+            order.getProducts().add(p);
+            order.setTotalPrice(order.getTotalPrice() + p.getPrice());
+            Actions.editOrder(order);
         }
     }
 
@@ -97,6 +149,7 @@ public class Console {
         }
         loggedIn = true;
         currentCustomer = c;
+        cart = new ArrayList<>();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
@@ -127,6 +180,7 @@ public class Console {
         }
         currentCustomer = c;
         loggedIn = true;
+        cart = new ArrayList<>();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
@@ -136,10 +190,20 @@ public class Console {
         for (Product product : products) {
             System.out.println("[" + product.getId() + "]" + product.getName() + " - " + product.getPrice() + " Kč");
         }
+        inListing = true;
     }
 
-    private static void addToCart() {
+    private static void viewCart() {
+        System.out.println(printCart());
 
+    }
+
+    private static String printCart() {
+        List<Order> orders = new ArrayList<>(currentCustomer.getOrders());
+        for (Order order : orders) {
+            if (order.getStatus().equals("new")) cart.add(order);
+        }
+        return cart.toString();
     }
 
     private static void pay() {
@@ -149,6 +213,8 @@ public class Console {
     private static void logout() {
         loggedIn = false;
         currentCustomer = null;
+        cart = null;
+        inListing = false;
     }
 
     private static void deleteAccount() {
