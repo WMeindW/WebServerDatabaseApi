@@ -150,6 +150,7 @@ public class Console {
         loggedIn = true;
         currentCustomer = c;
         cart = new ArrayList<>();
+        initCart();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
@@ -181,14 +182,11 @@ public class Console {
         currentCustomer = c;
         loggedIn = true;
         cart = new ArrayList<>();
+        initCart();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
     private static void viewProducts() {
-        List<Order> orders = new ArrayList<>(currentCustomer.getOrders());
-        for (Order order : orders) {
-            if (order.getStatus().equals("new")) cart.add(order);
-        }
         List<Product> products = Actions.getProducts();
         System.out.println("Available products:");
         for (Product product : products) {
@@ -198,7 +196,6 @@ public class Console {
     }
 
     private static void viewCart() {
-        initCart();
         System.out.println(printCart());
 
     }
@@ -206,7 +203,7 @@ public class Console {
     private static void initCart() {
         List<Order> orders = new ArrayList<>(currentCustomer.getOrders());
         for (Order order : orders) {
-            if (order.getStatus().equals("new") && !cart.contains(order)) cart.add(order);
+            if (order.getStatus().equals("new")) cart.add(order);
         }
     }
     private static String printCart() {
