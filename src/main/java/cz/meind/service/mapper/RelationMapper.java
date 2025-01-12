@@ -126,6 +126,24 @@ public class RelationMapper {
             stmt.setObject(2, idFieldRelation.get(o));
             stmt.executeUpdate();
 
+        } catch (SQLException | IllegalAccessException e) {
+            Application.logger.error(RelationMapper.class, e);
+        }
+    }
+
+    public void updateAllRelations(String id, Object o, Field relationField) {
+        String tableName = relationField.getAnnotation(ManyToMany.class).joinTable();
+        String idColumn = relationField.getAnnotation(ManyToMany.class).mappedBy();
+        String sql = "INSERT INTO " + tableName + " (" + idColumn + ", " + relationField.getAnnotation(ManyToMany.class).targetColumn() + ") VALUES (?,?)";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            Application.logger.info(RelationMapper.class, sql);
+            Field idFieldRelation = getIdField(o.getClass());
+            if (idFieldRelation == null) return;
+            idFieldRelation.setAccessible(true);
+            stmt.setObject(1, id);
+            stmt.setObject(2, idFieldRelation.get(o));
+            stmt.executeUpdate();
+
         } catch (SQLIntegrityConstraintViolationException ignored) {
 
         } catch (SQLException | IllegalAccessException e) {

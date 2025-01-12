@@ -6,6 +6,7 @@ import cz.meind.interfaces.Entity;
 import cz.meind.interfaces.ManyToMany;
 
 import java.util.List;
+import java.util.Objects;
 
 @Entity(tableName = "Product")
 public class Product {
@@ -71,6 +72,18 @@ public class Product {
     @Override
     public String toString() {
         return name + " " + description + " " + price + " Kč, ";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        return Objects.equals(id, product.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }
 

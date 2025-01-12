@@ -13,10 +13,12 @@ public class Console {
     private static Customer currentCustomer;
     private static boolean loggedIn = false;
     private static List<Order> cart;
+    private static List<Product> products;
     private static boolean inListing;
     private static boolean inCart;
 
     public static void run() {
+        products = Actions.getProducts();
         do {
             if (loggedIn) {
                 if (inListing) {
@@ -111,15 +113,15 @@ public class Console {
     }
 
     private static void addToCart(int productId) {
-        if (cart.isEmpty()) {
-            Product p = Actions.getProductById(productId);
-            if (p == null) {
-                System.err.println("Invalid product id");
-                return;
-            }
+        Product p = products.stream().filter(pr -> pr.getId() == productId).findFirst().get();
+        Order order = null;
+        for (Order o : cart) {
+            if (!o.getProducts().contains(p)) order = o;
+        }
+        if (cart.isEmpty() || order == null) {
             List<Product> products = new ArrayList<>();
             products.add(p);
-            Order order = new Order();
+            order = new Order();
             order.setOrderDate(LocalDateTime.now());
             order.setStatus("new");
             order.setCustomer(currentCustomer);
@@ -128,12 +130,6 @@ public class Console {
             cart.add(order);
             Actions.saveOrder(order);
         } else {
-            Order order = cart.get(0);
-            Product p = Actions.getProductById(productId);
-            if (p == null) {
-                System.err.println("Invalid product id");
-                return;
-            }
             order.getProducts().add(p);
             order.setTotalPrice(order.getTotalPrice() + p.getPrice());
             Actions.editOrder(order);
@@ -187,7 +183,6 @@ public class Console {
     }
 
     private static void viewProducts() {
-        List<Product> products = Actions.getProducts();
         System.out.println("Available products:");
         for (Product product : products) {
             System.out.println("[" + product.getId() + "]" + product.getName() + " - " + product.getPrice() + " Kč");
@@ -201,11 +196,9 @@ public class Console {
     }
 
     private static void initCart() {
-        List<Order> orders = new ArrayList<>(currentCustomer.getOrders());
-        for (Order order : orders) {
-            if (order.getStatus().equals("new")) cart.add(order);
-        }
+        cart = new ArrayList<>(currentCustomer.getOrders().stream().filter(order -> order.getStatus().equals("new")).toList());
     }
+
     private static String printCart() {
         return cart.toString();
     }

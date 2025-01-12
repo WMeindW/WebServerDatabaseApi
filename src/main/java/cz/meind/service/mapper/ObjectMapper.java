@@ -69,23 +69,11 @@ public class ObjectMapper {
             for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
                 Field relationField = relations.getValue();
                 relationField.setAccessible(true);
-                if (relationField.isAnnotationPresent(ManyToMany.class)) {
-                    for (Object o : (Collection<?>) relationField.get(entity)) {
-                        Field idFieldRelation = getIdField(o.getClass());
-                        if (idFieldRelation == null) {
-                            Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
-                            continue;
-                        }
-                        idFieldRelation.setAccessible(true);
-                        if (idFieldRelation.get(o).toString().equals("0") || idFieldRelation.get(o) == null)
-                            Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
-                        mtm.put(o, relationField);
-                    }
-                }
+                mapRelations(entity, mtm, relationField);
             }
 
             for (Map.Entry<Object, Field> m : mtm.entrySet()) {
-                relationMapper.saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
+                relationMapper.updateAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
             }
 
             sql.setLength(sql.length() - 2);
@@ -101,6 +89,22 @@ public class ObjectMapper {
             }
         } catch (Exception e) {
             Application.logger.error(ObjectMapper.class, e);
+        }
+    }
+
+    private void mapRelations(Object entity, Map<Object, Field> mtm, Field relationField) throws IllegalAccessException {
+        if (relationField.isAnnotationPresent(ManyToMany.class)) {
+            for (Object o : (Collection<?>) relationField.get(entity)) {
+                Field idFieldRelation = getIdField(o.getClass());
+                if (idFieldRelation == null) {
+                    Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
+                    continue;
+                }
+                idFieldRelation.setAccessible(true);
+                if (idFieldRelation.get(o).toString().equals("0") || idFieldRelation.get(o) == null)
+                    Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
+                mtm.put(o, relationField);
+            }
         }
     }
 
@@ -184,7 +188,6 @@ public class ObjectMapper {
         String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            Application.logger.info(ObjectMapper.class, sql);
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -234,19 +237,7 @@ public class ObjectMapper {
             if (relationField.isAnnotationPresent(OneToMany.class)) {
                 Integer id = completeSave(relationField.get(entity));
                 if (id != null) relationFields.put(relationField.getAnnotation(JoinColumn.class).name(), id);
-            } else if (relationField.isAnnotationPresent(ManyToMany.class)) {
-                for (Object o : (Collection<?>) relationField.get(entity)) {
-                    Field idFieldRelation = getIdField(o.getClass());
-                    if (idFieldRelation == null) {
-                        Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
-                        continue;
-                    }
-                    idFieldRelation.setAccessible(true);
-                    if (idFieldRelation.get(o).toString().equals("0") || idFieldRelation.get(o) == null)
-                        Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
-                    mtm.put(o, relationField);
-                }
-            }
+            } else mapRelations(entity, mtm, relationField);
         }
 
         for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
@@ -313,7 +304,6 @@ public class ObjectMapper {
         try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
             if (generatedKeys.next()) {
                 idField.setAccessible(true);
-
                 Object generatedKey = generatedKeys.getObject(1);
                 Class<?> idFieldType = idField.getType();
 
