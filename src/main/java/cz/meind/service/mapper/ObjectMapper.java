@@ -87,7 +87,8 @@ public class ObjectMapper {
             for (Map.Entry<Object, Field> m : mtm.entrySet()) {
                 relationMapper.saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
             }
-            sql.setLength(sql.length() - 2); // Remove trailing comma and space
+
+            sql.setLength(sql.length() - 2);
             sql.append(" WHERE ").append(idField.getAnnotation(Column.class).name()).append(" = ?");
             params.add(idValue);
 
@@ -98,7 +99,6 @@ public class ObjectMapper {
                 }
                 stmt.executeUpdate();
             }
-            System.out.println(mtm);
         } catch (Exception e) {
             Application.logger.error(ObjectMapper.class, e);
         }

@@ -185,6 +185,10 @@ public class Console {
     }
 
     private static void viewProducts() {
+        List<Order> orders = new ArrayList<>(currentCustomer.getOrders());
+        for (Order order : orders) {
+            if (order.getStatus().equals("new")) cart.add(order);
+        }
         List<Product> products = Actions.getProducts();
         System.out.println("Available products:");
         for (Product product : products) {
@@ -194,15 +198,18 @@ public class Console {
     }
 
     private static void viewCart() {
+        initCart();
         System.out.println(printCart());
 
     }
 
-    private static String printCart() {
+    private static void initCart() {
         List<Order> orders = new ArrayList<>(currentCustomer.getOrders());
         for (Order order : orders) {
-            if (order.getStatus().equals("new")) cart.add(order);
+            if (order.getStatus().equals("new") && !cart.contains(order)) cart.add(order);
         }
+    }
+    private static String printCart() {
         return cart.toString();
     }
 
