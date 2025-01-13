@@ -180,11 +180,11 @@ public class Console {
         String phone;
         do {
             System.out.print("Name:");
-            name = scanner.next().strip().replace(" ", "");
+            name = scanner.nextLine().strip().replace(" ", "");
             if (name.length() < 4 || name.length() > 8 || !name.matches("[a-zA-Z]*")) continue;
             System.out.print("Email: [*@*.*]");
             email = scanner.next().strip().replace(" ", "");
-            if (email.length() > 50 || !email.matches("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,6}$")) continue;
+            if (email.length() > 50 || !email.matches("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,6}")) continue;
             System.out.print("Address: ");
             address = scanner.next().strip().replace(" ", "");
             if (address.length() < 4 || address.length() > 50) continue;
@@ -226,7 +226,30 @@ public class Console {
     }
 
     private static void payCreditCard() {
-        System.out.println("Credit card");
+        String cardNumber;
+        String expiryDate;
+        String cvv;
+        String cardHolderName;
+
+        do {
+            System.out.print("Card Number [16 digits]: ");
+            cardNumber = scanner.next().strip().replace(" ", "");
+            if (cardNumber.length() != 16 || !cardNumber.matches("\\d{16}")) continue;
+
+            System.out.print("Expiry Date [MM/YY]: ");
+            expiryDate = scanner.next().strip().replace(" ", "");
+            if (!expiryDate.matches("(0[1-9]|1[0-2])/[0-9]{2}")) continue;
+
+            System.out.print("CVV [3 digits]: ");
+            cvv = scanner.next().strip().replace(" ", "");
+            if (cvv.length() != 3 || !cvv.matches("\\d{3}")) continue;
+
+            System.out.println("Cardholder Name [Name_Surname]: ");
+            cardHolderName = scanner.next().strip().replace(" ", "");
+            if (cardHolderName.length() < 4 || cardHolderName.length() > 50 || !cardHolderName.matches("[A-Z][a-z]+_[A-Z][a-z]+")) continue;
+            break;
+        } while (true);
+
     }
 
     private static void cancelPayment() {
