@@ -15,6 +15,7 @@ public class Console {
     private static List<Order> cart;
     private static List<Product> products;
     private static boolean inListing;
+    private static boolean payment;
 
     public static void run() {
         products = Actions.getProducts();
@@ -22,6 +23,8 @@ public class Console {
             if (loggedIn) {
                 if (inListing) {
                     System.out.print(printProductActions());
+                } else if (payment) {
+                    System.out.print(printPayment());
                 } else {
                     System.out.print(printActions());
                 }
@@ -50,6 +53,15 @@ public class Console {
                 [2] Pay
                 [3] Logout
                 [4] Delete account
+                [Exit] Exit
+                
+                Command:""";
+    }
+
+    private static String printPayment() {
+        return """
+                [0] Pay using credit card
+                [1] Cancel
                 [Exit] Exit
                 
                 Command:""";
@@ -87,6 +99,17 @@ public class Console {
             if (inListing) {
                 addToCart(choice);
                 inListing = false;
+            } else if (payment) {
+                switch (choice) {
+                    case 0:
+                        payCreditCard();
+                        break;
+                    case 1:
+                        cancelPayment();
+                        break;
+                    default:
+                        System.err.println("Invalid command, number out of range.");
+                }
             } else {
                 switch (choice) {
                     case 0:
@@ -96,7 +119,8 @@ public class Console {
                         viewCart();
                         break;
                     case 2:
-                        pay();
+                        System.out.println(printCart());
+                        payment = true;
                         break;
                     case 3:
                         logout();
@@ -191,7 +215,6 @@ public class Console {
 
     private static void viewCart() {
         System.out.println(printCart());
-
     }
 
     private static void initCart() {
@@ -202,10 +225,13 @@ public class Console {
         return cart.toString();
     }
 
-    private static void pay() {
-
+    private static void payCreditCard() {
+        System.out.println("Credit card");
     }
 
+    private static void cancelPayment() {
+        payment = false;
+    }
     private static void logout() {
         loggedIn = false;
         currentCustomer = null;
