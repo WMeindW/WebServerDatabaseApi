@@ -13,9 +13,9 @@ import java.util.*;
 public class Console {
     private static final Scanner scanner = new Scanner(System.in);
     private static Customer currentCustomer;
-    private static boolean loggedIn = false;
     private static List<Order> cart;
     private static List<Product> products;
+    private static boolean loggedIn;
     private static boolean inListing;
     private static boolean payment;
 
@@ -76,7 +76,6 @@ public class Console {
                 Enter product id to add to cart:""";
     }
 
-
     private static void execute(String command) {
         if (command.equalsIgnoreCase("exit")) exit();
         int choice;
@@ -107,7 +106,7 @@ public class Console {
                         payCreditCard();
                         break;
                     case 1:
-                        cancelPayment();
+                        payment = false;
                         break;
                     default:
                         System.err.println("Invalid command, number out of range.");
@@ -118,7 +117,7 @@ public class Console {
                         viewProducts();
                         break;
                     case 1:
-                        viewCart();
+                        System.out.println(printCart());
                         break;
                     case 2:
                         System.out.println(printCart());
@@ -214,10 +213,6 @@ public class Console {
         inListing = true;
     }
 
-    private static void viewCart() {
-        System.out.println(printCart());
-    }
-
     private static void initCart() {
         cart = new ArrayList<>(currentCustomer.getOrders().stream().filter(order -> order.getStatus().equals("new")).toList());
     }
@@ -296,10 +291,6 @@ public class Console {
         System.out.println("Payment successful!");
     }
 
-    private static void cancelPayment() {
-        payment = false;
-    }
-
     private static void logout() {
         loggedIn = false;
         currentCustomer = null;
@@ -314,6 +305,7 @@ public class Console {
     }
 
     private static void exit() {
+        scanner.close();
         Application.logger.info(Console.class, "Exit");
         Application.database.closeConnection();
         System.exit(0);
