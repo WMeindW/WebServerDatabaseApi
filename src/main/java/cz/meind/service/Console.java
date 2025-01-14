@@ -225,7 +225,17 @@ public class Console {
     }
 
     private static String printCart() {
-        return cart.toString();
+        StringBuilder sb = new StringBuilder();
+        for (Order order : cart) {
+            sb.append("Order #").append(order.getId()).append(" - ").append(order.getOrderDate()).append("\n");
+            sb.append("Products:\n");
+            for (Product product : order.getProducts()) {
+                sb.append("[").append(product.getId()).append("]").append(product.getName()).append(" - ").append(product.getPrice()).append(" Kč\n");
+            }
+            sb.append("Total Price: ").append(order.getTotalPrice()).append(" Kč\n");
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
     private static void payCreditCard() {
@@ -281,7 +291,6 @@ public class Console {
             }
 
         }
-        System.out.println(payments);
         Actions.savePayments(payments);
         Actions.payTransaction(cart);
     }
