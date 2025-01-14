@@ -16,26 +16,23 @@ public class Payment {
     @Column(name = "amount")
     private float amount;
 
-    @Column(name = "payment_type")
-    private String paymentType;
+    @Column(name = "holder")
+    private String holder;
 
-    @OneToMany
-    @JoinColumn(name = "order_id")
-    private Order order;
+    @Column(name = "cvv")
+    private int cvv;
 
-    public Order getOrder() {
-        return order;
-    }
+    @Column(name = "card_number")
+    private String cardNumber;
 
-    public void setOrder(Order order) {
-        this.order = order;
-    }
+    @Column(name = "expire")
+    private String expire;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -55,16 +52,59 @@ public class Payment {
         this.amount = amount;
     }
 
-    public String getPaymentType() {
-        return paymentType;
+    public String getHolder() {
+        return holder;
     }
 
-    public void setPaymentType(String paymentType) {
-        this.paymentType = paymentType;
+    public void setHolder(String holder) {
+        this.holder = holder;
     }
+
+    public int getCvv() {
+        return cvv;
+    }
+
+    public void setCvv(int cvv) {
+        this.cvv = cvv;
+    }
+
+    public String getCardNumber() {
+        return cardNumber;
+    }
+
+    public void setCardNumber(String cardNumber) {
+        this.cardNumber = cardNumber;
+    }
+
+    public String getExpire() {
+        return expire;
+    }
+
+    public void setExpire(String expire) {
+        this.expire = expire;
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    @OneToMany
+    @JoinColumn(name = "order_id")
+    private Order order;
 
     @Override
     public String toString() {
-        return "Payment{" + "id=" + id + ", paymentDate=" + paymentDate + ", amount=" + amount + ", paymentType='" + paymentType + '\'' + ", order=" + order + '}';
+        return "Payment{" +
+                "expire='" + expire + '\'' +
+                ", cardNumber='" + cardNumber + '\'' +
+                ", holder='" + holder + '\'' +
+                ", paymentDate=" + paymentDate +
+                ", amount=" + amount +
+                ", id=" + id +
+                '}';
     }
 }
