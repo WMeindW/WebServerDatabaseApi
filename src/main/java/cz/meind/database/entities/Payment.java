@@ -20,7 +20,7 @@ public class Payment {
     private String holder;
 
     @Column(name = "cvv")
-    private int cvv;
+    private String cvv;
 
     @Column(name = "card_number")
     private String cardNumber;
@@ -60,11 +60,11 @@ public class Payment {
         this.holder = holder;
     }
 
-    public int getCvv() {
+    public String getCvv() {
         return cvv;
     }
 
-    public void setCvv(int cvv) {
+    public void setCvv(String cvv) {
         this.cvv = cvv;
     }
 
@@ -90,6 +90,15 @@ public class Payment {
 
     public void setOrder(Order order) {
         this.order = order;
+    }
+
+    public Payment(String expire, String cardNumber, String cvv, String holder, float amount) {
+        this.expire = expire;
+        this.cardNumber = cardNumber;
+        this.cvv = cvv;
+        this.holder = holder;
+        this.amount = amount;
+        this.paymentDate = LocalDateTime.now();
     }
 
     @OneToMany

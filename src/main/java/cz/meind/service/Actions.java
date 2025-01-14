@@ -1,9 +1,11 @@
 package cz.meind.service;
 
+import cz.meind.application.Application;
 import cz.meind.database.entities.Customer;
 import cz.meind.database.entities.Order;
 import cz.meind.database.entities.Product;
 
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -41,10 +43,37 @@ public class Actions {
     }
 
     public static void editOrder(Order order) {
-        mapper.update(order);
+        try {
+            mapper.update(order);
+        } catch (Exception e) {
+            Application.logger.error(Actions.class, e);
+        }
     }
 
     public static void saveOrder(Order order) {
         mapper.save(order);
+    }
+
+    public static void payTransaction(List<Order> future) {
+        Customer customer = future.get(0).getCustomer();
+        List<Order> current = mapper.fetchAll(Order.class).stream().filter(order -> order.getCustomer().equals(customer)).toList();
+        for (Order order : future) {
+            try {
+                mapper.update(order);
+            } catch (Exception e) {
+                revert(current);
+                return;
+            }
+        }
+    }
+
+    private static void revert(List<?> objects) {
+        for (Object o : objects) {
+            try {
+                mapper.update(o);
+            } catch (Exception e) {
+                Application.logger.error(Actions.class, e);
+            }
+        }
     }
 }

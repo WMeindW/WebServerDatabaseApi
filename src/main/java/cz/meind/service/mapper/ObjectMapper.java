@@ -35,8 +35,7 @@ public class ObjectMapper {
         return null;
     }
 
-    public void update(Object entity) {
-        try {
+    public void update(Object entity) throws IllegalAccessException, SQLException {
             Class<?> clazz = entity.getClass();
             EntityMetadata metadata = Application.database.entities.get(clazz);
             Field idField = getIdField(clazz);
@@ -87,9 +86,6 @@ public class ObjectMapper {
                 }
                 stmt.executeUpdate();
             }
-        } catch (Exception e) {
-            Application.logger.error(ObjectMapper.class, e);
-        }
     }
 
     private void mapRelations(Object entity, Map<Object, Field> mtm, Field relationField) throws IllegalAccessException {

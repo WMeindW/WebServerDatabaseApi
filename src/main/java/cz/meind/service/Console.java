@@ -3,6 +3,7 @@ package cz.meind.service;
 import cz.meind.application.Application;
 import cz.meind.database.entities.Customer;
 import cz.meind.database.entities.Order;
+import cz.meind.database.entities.Payment;
 import cz.meind.database.entities.Product;
 
 import java.time.LocalDateTime;
@@ -151,6 +152,7 @@ public class Console {
             order.setCustomer(currentCustomer);
             order.setTotalPrice(p.getPrice());
             order.setProducts(products);
+            order.setPayment(new ArrayList<>());
             cart.add(order);
             Actions.saveOrder(order);
         } else {
@@ -231,6 +233,7 @@ public class Console {
         String expiryDate;
         String cvv;
         String cardHolderName;
+        int amount;
 
         do {
             System.out.print("Card Number [16 digits]: ");
@@ -249,9 +252,29 @@ public class Console {
             cardHolderName = scanner.next().strip().replace(" ", "");
             if (cardHolderName.length() < 4 || cardHolderName.length() > 50 || !cardHolderName.matches("[A-Z][a-z]+_[A-Z][a-z]+"))
                 continue;
+
             break;
         } while (true);
-
+        try {
+            System.out.println("Amount: ");
+            amount = Integer.parseInt(scanner.next().strip().replace(" ", ""));
+        } catch (Exception e) {
+            System.err.println("Invalid amount");
+            return;
+        }
+        List<Order> updated = new ArrayList<>();
+        for (Order o : cart) {
+            updated.add(o);
+            if (o.getTotalPrice() >= amount) {
+                o.getPayment().add(new Payment(expiryDate, cardNumber, cvv, cardHolderName, amount));
+                break;
+            }
+            o.setStatus("completed");
+            cart.remove(o);
+            o.getPayment().add(new Payment(expiryDate, cardNumber, cvv, cardHolderName, o.getTotalPrice()));
+            amount -= (int) o.getTotalPrice();
+        }
+        Actions.payTransaction(updated);
     }
 
     private static void cancelPayment() {
@@ -272,7 +295,7 @@ public class Console {
     }
 
     private static void exit() {
-        Application.logger.info(Console.class,"Exit");
+        Application.logger.info(Console.class, "Exit");
         Application.database.closeConnection();
         System.exit(0);
     }
