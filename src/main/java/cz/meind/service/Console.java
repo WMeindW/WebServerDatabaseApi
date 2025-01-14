@@ -171,7 +171,6 @@ public class Console {
         }
         loggedIn = true;
         currentCustomer = c;
-        cart = new ArrayList<>();
         initCart();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
@@ -203,7 +202,6 @@ public class Console {
         }
         currentCustomer = c;
         loggedIn = true;
-        cart = new ArrayList<>();
         initCart();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
@@ -293,6 +291,9 @@ public class Console {
         }
         Actions.savePayments(payments);
         Actions.payTransaction(cart);
+        currentCustomer = Actions.getCustomerById(currentCustomer.getId());
+        initCart();
+        System.out.println("Payment successful!");
     }
 
     private static void cancelPayment() {

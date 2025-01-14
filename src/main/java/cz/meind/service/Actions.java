@@ -73,6 +73,10 @@ public class Actions {
         }
     }
 
+    public static Customer getCustomerById(Integer id) {
+        return mapper.fetchById(Customer.class, id);
+    }
+
     private static void revert(List<?> objects) {
         for (Object o : objects) {
             try {
