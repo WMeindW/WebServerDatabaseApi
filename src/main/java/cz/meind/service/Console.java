@@ -1,5 +1,6 @@
 package cz.meind.service;
 
+import cz.meind.application.Application;
 import cz.meind.database.entities.Customer;
 import cz.meind.database.entities.Order;
 import cz.meind.database.entities.Product;
@@ -76,7 +77,7 @@ public class Console {
 
 
     private static void execute(String command) {
-        if (command.equalsIgnoreCase("exit")) System.exit(0);
+        if (command.equalsIgnoreCase("exit")) exit();
         int choice;
         try {
             choice = Integer.parseInt(command);
@@ -246,7 +247,8 @@ public class Console {
 
             System.out.println("Cardholder Name [Name_Surname]: ");
             cardHolderName = scanner.next().strip().replace(" ", "");
-            if (cardHolderName.length() < 4 || cardHolderName.length() > 50 || !cardHolderName.matches("[A-Z][a-z]+_[A-Z][a-z]+")) continue;
+            if (cardHolderName.length() < 4 || cardHolderName.length() > 50 || !cardHolderName.matches("[A-Z][a-z]+_[A-Z][a-z]+"))
+                continue;
             break;
         } while (true);
 
@@ -255,6 +257,7 @@ public class Console {
     private static void cancelPayment() {
         payment = false;
     }
+
     private static void logout() {
         loggedIn = false;
         currentCustomer = null;
@@ -266,6 +269,12 @@ public class Console {
         Actions.deleteCustomer(currentCustomer);
         logout();
         System.out.println("Account deleted.");
+    }
+
+    private static void exit() {
+        Application.logger.info(Console.class,"Exit");
+        Application.database.closeConnection();
+        System.exit(0);
     }
 }
 

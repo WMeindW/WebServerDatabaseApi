@@ -2,6 +2,7 @@ package cz.meind.database;
 
 import cz.meind.application.Application;
 import cz.meind.interfaces.Entity;
+import cz.meind.service.Console;
 import org.reflections.Reflections;
 
 import java.sql.Connection;
@@ -14,13 +15,29 @@ public class DatabaseContext {
 
     public Map<Class<?>, EntityMetadata> entities = new HashMap<>();
 
+    private Connection connection;
+
     public Connection getConnection() {
         try {
-            return DriverManager.getConnection(Application.dbUrl, Application.dbUser, Application.dbPassword);
+            if (connection == null)
+                connection = DriverManager.getConnection(Application.dbUrl, Application.dbUser, Application.dbPassword);
+            return connection;
         } catch (SQLException e) {
             Application.logger.error(DatabaseContext.class, e);
         }
         return null;
+    }
+
+    public void closeConnection() {
+        Application.logger.info(DatabaseContext.class,"Closing connection");
+
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            Application.logger.error(DatabaseContext.class, e);
+        }
     }
 
     public DatabaseContext() {
