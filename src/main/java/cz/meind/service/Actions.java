@@ -3,6 +3,7 @@ package cz.meind.service;
 import cz.meind.application.Application;
 import cz.meind.database.entities.Customer;
 import cz.meind.database.entities.Order;
+import cz.meind.database.entities.Payment;
 import cz.meind.database.entities.Product;
 
 import java.sql.SQLException;
@@ -52,6 +53,11 @@ public class Actions {
 
     public static void saveOrder(Order order) {
         mapper.save(order);
+    }
+
+    public static void savePayments(List<Payment> p) {
+        for (Payment payment : p)
+            mapper.save(payment);
     }
 
     public static void payTransaction(List<Order> future) {

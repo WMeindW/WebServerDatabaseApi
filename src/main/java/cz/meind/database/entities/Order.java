@@ -87,6 +87,7 @@ public class Order {
         return Objects.equals(id, order.id);
     }
 
+
     @Override
     public String toString() {
         return "[" + id + "] products: " + products + " " + totalPrice + payment + "\n";

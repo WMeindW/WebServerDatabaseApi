@@ -36,56 +36,56 @@ public class ObjectMapper {
     }
 
     public void update(Object entity) throws IllegalAccessException, SQLException {
-            Class<?> clazz = entity.getClass();
-            EntityMetadata metadata = Application.database.entities.get(clazz);
-            Field idField = getIdField(clazz);
+        Class<?> clazz = entity.getClass();
+        EntityMetadata metadata = Application.database.entities.get(clazz);
+        Field idField = getIdField(clazz);
 
-            if (idField == null) {
-                Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field"));
-                return;
+        if (idField == null) {
+            Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + clazz.getName() + " does not have an ID field"));
+            return;
+        }
+        idField.setAccessible(true);
+        Object idValue = idField.get(entity);
+        if (idValue == null || Integer.parseInt(idValue.toString()) == 0) {
+            Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Cannot update entity without a valid ID"));
+            return;
+        }
+
+        StringBuilder sql = new StringBuilder("UPDATE ").append(metadata.getTableName()).append(" SET ");
+        List<Object> params = new ArrayList<>();
+
+        Map<Object, Field> mtm = new HashMap<>();
+
+        for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
+            Field field = getField(clazz, columnEntry.getValue());
+            if (field == null || field.getName().equals(idField.getName())) continue; // Skip ID field
+
+            field.setAccessible(true);
+            sql.append(columnEntry.getKey()).append(" = ?, ");
+            params.add(field.get(entity));
+        }
+
+        for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
+            Field relationField = relations.getValue();
+            relationField.setAccessible(true);
+            mapRelations(entity, mtm, relationField);
+        }
+
+        for (Map.Entry<Object, Field> m : mtm.entrySet()) {
+            relationMapper.updateAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
+        }
+
+        sql.setLength(sql.length() - 2);
+        sql.append(" WHERE ").append(idField.getAnnotation(Column.class).name()).append(" = ?");
+        params.add(idValue);
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+            Application.logger.info(ObjectMapper.class, sql.toString());
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
             }
-            idField.setAccessible(true);
-            Object idValue = idField.get(entity);
-            if (idValue == null || Integer.parseInt(idValue.toString()) == 0) {
-                Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Cannot update entity without a valid ID"));
-                return;
-            }
-
-            StringBuilder sql = new StringBuilder("UPDATE ").append(metadata.getTableName()).append(" SET ");
-            List<Object> params = new ArrayList<>();
-
-            Map<Object, Field> mtm = new HashMap<>();
-
-            for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
-                Field field = getField(clazz, columnEntry.getValue());
-                if (field == null || field.getName().equals(idField.getName())) continue; // Skip ID field
-
-                field.setAccessible(true);
-                sql.append(columnEntry.getKey()).append(" = ?, ");
-                params.add(field.get(entity));
-            }
-
-            for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
-                Field relationField = relations.getValue();
-                relationField.setAccessible(true);
-                mapRelations(entity, mtm, relationField);
-            }
-
-            for (Map.Entry<Object, Field> m : mtm.entrySet()) {
-                relationMapper.updateAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
-            }
-
-            sql.setLength(sql.length() - 2);
-            sql.append(" WHERE ").append(idField.getAnnotation(Column.class).name()).append(" = ?");
-            params.add(idValue);
-
-            try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
-                Application.logger.info(ObjectMapper.class, sql.toString());
-                for (int i = 0; i < params.size(); i++) {
-                    stmt.setObject(i + 1, params.get(i));
-                }
-                stmt.executeUpdate();
-            }
+            stmt.executeUpdate();
+        }
     }
 
     private void mapRelations(Object entity, Map<Object, Field> mtm, Field relationField) throws IllegalAccessException {
@@ -256,6 +256,7 @@ public class ObjectMapper {
         sql.append(")").append(values).append(")");
 
         try (PreparedStatement stmt = connection.prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS)) {
+            Application.logger.info(ObjectMapper.class, sql.toString());
             for (int i = 0; i < params.size(); i++) {
                 stmt.setObject(i + 1, params.get(i));
             }

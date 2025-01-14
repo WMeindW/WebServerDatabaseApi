@@ -262,19 +262,28 @@ public class Console {
             System.err.println("Invalid amount");
             return;
         }
-        List<Order> updated = new ArrayList<>();
+        List<Payment> payments = new ArrayList<>();
         for (Order o : cart) {
-            updated.add(o);
+            if (amount <= 0) break;
             if (o.getTotalPrice() >= amount) {
-                o.getPayment().add(new Payment(expiryDate, cardNumber, cvv, cardHolderName, amount));
-                break;
+                Payment p = new Payment(expiryDate, cardNumber, cvv, cardHolderName, amount);
+                p.setOrder(o);
+                o.getPayment().add(p);
+                payments.add(p);
+                amount -= amount;
+            } else {
+                Payment p = new Payment(expiryDate, cardNumber, cvv, cardHolderName, o.getTotalPrice());
+                p.setOrder(o);
+                o.getPayment().add(p);
+                o.setStatus("completed");
+                payments.add(p);
+                amount -= (int) o.getTotalPrice();
             }
-            o.setStatus("completed");
-            cart.remove(o);
-            o.getPayment().add(new Payment(expiryDate, cardNumber, cvv, cardHolderName, o.getTotalPrice()));
-            amount -= (int) o.getTotalPrice();
+            System.out.println(o);
         }
-        Actions.payTransaction(updated);
+        System.out.println(payments);
+        Actions.savePayments(payments);
+        Actions.payTransaction(cart);
     }
 
     private static void cancelPayment() {

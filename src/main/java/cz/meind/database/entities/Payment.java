@@ -92,6 +92,9 @@ public class Payment {
         this.order = order;
     }
 
+    public Payment() {
+    }
+
     public Payment(String expire, String cardNumber, String cvv, String holder, float amount) {
         this.expire = expire;
         this.cardNumber = cardNumber;
