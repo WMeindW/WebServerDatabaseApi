@@ -233,7 +233,7 @@ public class Console {
         String expiryDate;
         String cvv;
         String cardHolderName;
-        int amount;
+        float amount;
 
         do {
             System.out.print("Card Number [16 digits]: ");
@@ -277,9 +277,9 @@ public class Console {
                 o.getPayment().add(p);
                 o.setStatus("completed");
                 payments.add(p);
-                amount -= (int) o.getTotalPrice();
+                amount -= o.getTotalPrice();
             }
-            System.out.println(o);
+
         }
         System.out.println(payments);
         Actions.savePayments(payments);
