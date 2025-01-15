@@ -261,7 +261,7 @@ public class Console {
         } while (true);
         try {
             System.out.println("Amount: ");
-            amount = Integer.parseInt(scanner.next().strip().replace(" ", ""));
+            amount = Float.parseFloat(scanner.next().strip().replace(" ", ""));
         } catch (Exception e) {
             System.err.println("Invalid amount");
             return;
@@ -273,18 +273,20 @@ public class Console {
                 Payment p = new Payment(expiryDate, cardNumber, cvv, cardHolderName, amount);
                 p.setOrder(o);
                 o.getPayment().add(p);
+                o.setTotalPrice(o.getTotalPrice() - amount);
                 payments.add(p);
-                amount -= amount;
+                amount = 0f;
             } else {
                 Payment p = new Payment(expiryDate, cardNumber, cvv, cardHolderName, o.getTotalPrice());
+                amount = amount - o.getTotalPrice();
                 p.setOrder(o);
                 o.getPayment().add(p);
                 o.setStatus("completed");
                 payments.add(p);
-                amount -= o.getTotalPrice();
+                o.setTotalPrice(0);
             }
-
         }
+        System.out.println("Change: " + amount);
         Actions.savePayments(payments);
         Actions.payTransaction(cart);
         currentCustomer = Actions.getCustomerById(currentCustomer.getId());

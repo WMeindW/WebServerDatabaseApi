@@ -94,7 +94,11 @@ public class ObjectMapper {
             } catch (Exception e) {
                 Application.logger.error(ObjectMapper.class, e);
             }
-
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                Application.logger.error(ObjectMapper.class, e);
+            }
         }
         return entities;
     }
@@ -115,10 +119,10 @@ public class ObjectMapper {
             } else {
                 Application.logger.error(ObjectMapper.class, "No entity with id " + id);
             }
+            rs.close();
         } catch (Exception e) {
             Application.logger.error(ObjectMapper.class, e);
         }
-
         return null;
     }
 
