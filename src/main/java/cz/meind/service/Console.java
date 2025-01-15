@@ -13,9 +13,9 @@ import java.util.*;
 public class Console {
     private static final Scanner scanner = new Scanner(System.in);
     private static Customer currentCustomer;
-    private static boolean loggedIn = false;
     private static List<Order> cart;
     private static List<Product> products;
+    private static boolean loggedIn;
     private static boolean inListing;
     private static boolean payment;
 
@@ -77,7 +77,6 @@ public class Console {
                 Enter product id to add to cart:""";
     }
 
-
     private static void execute(String command) {
         if (command.equalsIgnoreCase("exit")) exit();
         int choice;
@@ -108,7 +107,7 @@ public class Console {
                         payCreditCard();
                         break;
                     case 1:
-                        cancelPayment();
+                        payment = false;
                         break;
                     default:
                         System.err.println("Invalid command, number out of range.");
@@ -119,7 +118,7 @@ public class Console {
                         viewProducts();
                         break;
                     case 1:
-                        viewCart();
+                        System.out.println(printCart());
                         break;
                     case 2:
                         System.out.println(printCart());
@@ -172,7 +171,6 @@ public class Console {
         }
         loggedIn = true;
         currentCustomer = c;
-        cart = new ArrayList<>();
         initCart();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
@@ -204,7 +202,6 @@ public class Console {
         }
         currentCustomer = c;
         loggedIn = true;
-        cart = new ArrayList<>();
         initCart();
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
@@ -217,16 +214,22 @@ public class Console {
         inListing = true;
     }
 
-    private static void viewCart() {
-        System.out.println(printCart());
-    }
-
     private static void initCart() {
         cart = new ArrayList<>(currentCustomer.getOrders().stream().filter(order -> order.getStatus().equals("new")).toList());
     }
 
     private static String printCart() {
-        return cart.toString();
+        StringBuilder sb = new StringBuilder();
+        for (Order order : cart) {
+            sb.append("Order #").append(order.getId()).append(" - ").append(order.getOrderDate()).append("\n");
+            sb.append("Products:\n");
+            for (Product product : order.getProducts()) {
+                sb.append("[").append(product.getId()).append("]").append(product.getName()).append(" - ").append(product.getPrice()).append(" Kč\n");
+            }
+            sb.append("Total Price: ").append(order.getTotalPrice()).append(" Kč\n");
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
     private static void payCreditCard() {
@@ -282,13 +285,11 @@ public class Console {
             }
 
         }
-        System.out.println(payments);
         Actions.savePayments(payments);
         Actions.payTransaction(cart);
-    }
-
-    private static void cancelPayment() {
-        payment = false;
+        currentCustomer = Actions.getCustomerById(currentCustomer.getId());
+        initCart();
+        System.out.println("Payment successful!");
     }
 
     private static void logout() {
@@ -305,6 +306,7 @@ public class Console {
     }
 
     private static void exit() {
+        scanner.close();
         Application.logger.info(Console.class, "Exit");
         Application.database.closeConnection();
         System.exit(0);
