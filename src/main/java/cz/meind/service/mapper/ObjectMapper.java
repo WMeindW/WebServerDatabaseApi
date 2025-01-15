@@ -1,11 +1,10 @@
 package cz.meind.service.mapper;
 
+import com.mysql.cj.x.protobuf.MysqlxCursor;
 import cz.meind.application.Application;
 import cz.meind.database.EntityMetadata;
-import cz.meind.interfaces.Column;
-import cz.meind.interfaces.JoinColumn;
-import cz.meind.interfaces.ManyToMany;
-import cz.meind.interfaces.OneToMany;
+import cz.meind.interfaces.*;
+import org.apache.commons.csv.CSVRecord;
 
 
 import java.lang.reflect.Field;
@@ -24,6 +23,16 @@ public class ObjectMapper {
     public ObjectMapper(Connection connection) {
         relationMapper = new RelationMapper(connection, this);
         sqlService = new SqlService(connection);
+    }
+
+    public void addCsv(List<CSVRecord> records, Class<?> clazz) {
+        for (CSVRecord record : records) {
+            try {
+                sqlService.save(Application.database.entities.get(clazz), clazz, record);
+            } catch (SQLException e) {
+                Application.logger.error(SqlService.class, "Error saving: " + record.toString());
+            }
+        }
     }
 
     public void save(Object o) {
@@ -63,22 +72,6 @@ public class ObjectMapper {
         }
 
         sqlService.update(metadata, clazz, idField, entity);
-    }
-
-    private void mapRelations(Object entity, Map<Object, Field> mtm, Field relationField) throws IllegalAccessException {
-        if (relationField.isAnnotationPresent(ManyToMany.class)) {
-            for (Object o : (Collection<?>) relationField.get(entity)) {
-                Field idFieldRelation = getIdField(o.getClass());
-                if (idFieldRelation == null) {
-                    Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
-                    continue;
-                }
-                idFieldRelation.setAccessible(true);
-                if (idFieldRelation.get(o).toString().equals("0") || idFieldRelation.get(o) == null)
-                    Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
-                mtm.put(o, relationField);
-            }
-        }
     }
 
     public <T> List<T> fetchAll(Class<T> clazz) {
@@ -163,7 +156,7 @@ public class ObjectMapper {
         rs.close();
     }
 
-    private Integer completeSave(Object entity) throws IllegalAccessException, SQLException {
+    private Integer completeSave(Object entity) throws IllegalAccessException {
         Class<?> clazz = entity.getClass();
         EntityMetadata metadata = Application.database.entities.get(clazz);
 
@@ -219,6 +212,22 @@ public class ObjectMapper {
                         Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToMany(idField.get(entity).toString(), relationField));
                 case "ManyToOne" ->
                         Utils.set(relationField, entity, relationMapper.fetchAllRelationsManyToOne(idField.get(entity).toString(), relationField));
+            }
+        }
+    }
+
+    private void mapRelations(Object entity, Map<Object, Field> mtm, Field relationField) throws IllegalAccessException {
+        if (relationField.isAnnotationPresent(ManyToMany.class)) {
+            for (Object o : (Collection<?>) relationField.get(entity)) {
+                Field idFieldRelation = getIdField(o.getClass());
+                if (idFieldRelation == null) {
+                    Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Entity " + o.getClass().getName() + " does not have an ID field"));
+                    continue;
+                }
+                idFieldRelation.setAccessible(true);
+                if (idFieldRelation.get(o).toString().equals("0") || idFieldRelation.get(o) == null)
+                    Application.logger.error(ObjectMapper.class, new IllegalArgumentException("Save related entities first"));
+                mtm.put(o, relationField);
             }
         }
     }

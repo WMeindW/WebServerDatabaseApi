@@ -42,6 +42,7 @@ public class Console {
                 
                 [0] Login
                 [1] Signup
+                [2] Import products (.csv)
                 [Exit] Exit
                 
                 Command:""";
@@ -93,6 +94,9 @@ public class Console {
                     break;
                 case 1:
                     signup();
+                    break;
+                case 2:
+                    importData();
                     break;
                 default:
                     System.err.println("Invalid command, number out of range.");
@@ -305,6 +309,11 @@ public class Console {
         Actions.deleteCustomer(currentCustomer);
         logout();
         System.out.println("Account deleted.");
+    }
+
+    private static void importData() {
+        System.out.println("Set file path: ");
+        Actions.importFile(scanner.next().strip());
     }
 
     private static void exit() {
