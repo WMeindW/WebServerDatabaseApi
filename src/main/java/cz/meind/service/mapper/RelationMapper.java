@@ -53,7 +53,7 @@ public class RelationMapper {
                 Class<T> clazz = (Class<T>) type.getActualTypeArguments()[0];
                 while (rs.next()) {
                     T entity = clazz.getDeclaredConstructor().newInstance();
-                    mapper.fetchById(rs.getObject(relationField.getAnnotation(ManyToMany.class).targetColumn()).toString(), clazz, entity);
+                    mapper.fetchById(Integer.valueOf(rs.getObject(relationField.getAnnotation(ManyToMany.class).targetColumn()).toString()), clazz, entity);
                     entities.add(entity);
                 }
             } catch (Exception e) {

@@ -94,6 +94,7 @@ public class Logger {
      * @param e The exception.
      */
     public void error(Class<?> c, Exception e) {
+        e.printStackTrace();
         System.err.println(c.getName() + " [" + LocalDateTime.now() + "] ERROR: " + e);
         write(c.getName() + " [" + LocalDateTime.now() + "] ERROR: " + e);
     }

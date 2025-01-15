@@ -71,6 +71,7 @@ public class Console {
 
     private static String printProductActions() {
         return """
+                [0] Cancel
                 [Exit] Exit
                 
                 Enter product id to add to cart:""";
@@ -99,7 +100,7 @@ public class Console {
             }
         } else {
             if (inListing) {
-                addToCart(choice);
+                if (choice != 0) addToCart(choice);
                 inListing = false;
             } else if (payment) {
                 switch (choice) {

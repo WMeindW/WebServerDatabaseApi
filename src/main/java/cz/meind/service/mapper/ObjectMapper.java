@@ -18,21 +18,20 @@ import static cz.meind.service.mapper.Utils.getIdField;
 
 
 public class ObjectMapper {
-    private final Connection connection;
     private final RelationMapper relationMapper;
+    private final SqlService sqlService;
 
     public ObjectMapper(Connection connection) {
-        this.connection = connection;
         relationMapper = new RelationMapper(connection, this);
+        sqlService = new SqlService(connection);
     }
 
-    public Integer save(Object o) {
+    public void save(Object o) {
         try {
-            return completeSave(o);
+            completeSave(o);
         } catch (Exception e) {
             Application.logger.error(ObjectMapper.class, e);
         }
-        return null;
     }
 
     public void update(Object entity) throws IllegalAccessException, SQLException {
@@ -51,19 +50,7 @@ public class ObjectMapper {
             return;
         }
 
-        StringBuilder sql = new StringBuilder("UPDATE ").append(metadata.getTableName()).append(" SET ");
-        List<Object> params = new ArrayList<>();
-
         Map<Object, Field> mtm = new HashMap<>();
-
-        for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
-            Field field = getField(clazz, columnEntry.getValue());
-            if (field == null || field.getName().equals(idField.getName())) continue; // Skip ID field
-
-            field.setAccessible(true);
-            sql.append(columnEntry.getKey()).append(" = ?, ");
-            params.add(field.get(entity));
-        }
 
         for (Map.Entry<String, Field> relations : metadata.getRelations().entrySet()) {
             Field relationField = relations.getValue();
@@ -75,17 +62,7 @@ public class ObjectMapper {
             relationMapper.updateAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
         }
 
-        sql.setLength(sql.length() - 2);
-        sql.append(" WHERE ").append(idField.getAnnotation(Column.class).name()).append(" = ?");
-        params.add(idValue);
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
-            Application.logger.info(ObjectMapper.class, sql.toString());
-            for (int i = 0; i < params.size(); i++) {
-                stmt.setObject(i + 1, params.get(i));
-            }
-            stmt.executeUpdate();
-        }
+        sqlService.update(metadata, clazz, idField, entity);
     }
 
     private void mapRelations(Object entity, Map<Object, Field> mtm, Field relationField) throws IllegalAccessException {
@@ -105,13 +82,10 @@ public class ObjectMapper {
     }
 
     public <T> List<T> fetchAll(Class<T> clazz) {
-        EntityMetadata metadata = Application.database.entities.get(clazz);
-        String sql = "SELECT * FROM " + metadata.getTableName();
+        ResultSet rs = sqlService.fetchAll(Application.database.entities.get(clazz));
         List<T> entities = new ArrayList<>();
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            Application.logger.info(ObjectMapper.class, sql);
-            try (ResultSet rs = stmt.executeQuery()) {
+        if (rs != null) {
+            try {
                 while (rs.next()) {
                     T entity = clazz.getDeclaredConstructor().newInstance();
                     mapFields(entity, clazz, rs);
@@ -120,13 +94,10 @@ public class ObjectMapper {
             } catch (Exception e) {
                 Application.logger.error(ObjectMapper.class, e);
             }
-        } catch (SQLException e) {
-            Application.logger.error(ObjectMapper.class, e);
-        }
 
+        }
         return entities;
     }
-
 
     public <T> T fetchById(Class<T> clazz, Integer id) {
         EntityMetadata metadata = Application.database.entities.get(clazz);
@@ -135,25 +106,19 @@ public class ObjectMapper {
             Application.logger.error(ObjectMapper.class, new SQLException("No id field found"));
             return null;
         }
-        String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            Application.logger.info(ObjectMapper.class, sql);
-            stmt.setObject(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                T entity = clazz.getDeclaredConstructor().newInstance();
-                if (rs.next()) {
-                    mapFields(entity, clazz, rs);
-                    return entity;
-                } else {
-                    Application.logger.error(ObjectMapper.class, "No entity with id " + id);
-                }
-            } catch (Exception e) {
-                Application.logger.error(ObjectMapper.class, e);
+        ResultSet rs = sqlService.fetchById(metadata, idColumn.getAnnotation(Column.class).name(), id);
+        try {
+            T entity = clazz.getDeclaredConstructor().newInstance();
+            if (rs.next()) {
+                mapFields(entity, clazz, rs);
+                return entity;
+            } else {
+                Application.logger.error(ObjectMapper.class, "No entity with id " + id);
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             Application.logger.error(ObjectMapper.class, e);
         }
+
         return null;
     }
 
@@ -164,48 +129,34 @@ public class ObjectMapper {
             Application.logger.error(ObjectMapper.class, new SQLException("No id column"));
             return;
         }
-
-        String sql = "DELETE FROM " + metadata.getTableName() + " WHERE " + idField.getAnnotation(Column.class).name() + " = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            Application.logger.info(ObjectMapper.class, sql);
-            stmt.setObject(1, id);
-            stmt.executeUpdate();
-        } catch (SQLIntegrityConstraintViolationException e) {
-            Application.logger.error(ObjectMapper.class, new SQLException("Delete relations first, constraint failed"));
-        } catch (Exception e) {
-            Application.logger.error(ObjectMapper.class, e);
-        }
+        sqlService.deleteById(metadata.getTableName(), idField.getAnnotation(Column.class).name(), id);
     }
 
-    void fetchById(String id, Class<?> clazz, Object entity) throws Exception {
+    void fetchById(Integer id, Class<?> clazz, Object entity) throws Exception {
         EntityMetadata metadata = Application.database.entities.get(clazz);
         Field idColumn = getIdField(clazz);
         if (idColumn == null) throw new SQLException("No id column");
-        String sql = "SELECT * FROM " + metadata.getTableName() + " WHERE " + idColumn.getAnnotation(Column.class).name() + " = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
-                        String columnName = columnEntry.getKey();
-                        String fieldName = columnEntry.getValue();
-                        Field field = getField(clazz, fieldName);
-                        if (field == null) continue;
-                        field.setAccessible(true);
-                        field.set(entity, rs.getObject(columnName));
-                    }
-                    for (Map.Entry<String, Field> relationEntry : metadata.getRelations().entrySet()) {
-                        Field relationField = relationEntry.getValue();
-                        relationField.setAccessible(true);
-                        String relationType = relationEntry.getKey();
-                        if (relationType.equals("OneToMany")) {
-                            relationField.set(entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
-                        }
-                    }
+        ResultSet rs = sqlService.fetchById(metadata, idColumn.getAnnotation(Column.class).name(), id);
+        if (rs.next()) {
+            for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
+                String columnName = columnEntry.getKey();
+                String fieldName = columnEntry.getValue();
+                Field field = getField(clazz, fieldName);
+                if (field == null) continue;
+                field.setAccessible(true);
+                field.set(entity, rs.getObject(columnName));
+            }
+            for (Map.Entry<String, Field> relationEntry : metadata.getRelations().entrySet()) {
+                Field relationField = relationEntry.getValue();
+                relationField.setAccessible(true);
+                String relationType = relationEntry.getKey();
+                if (relationType.equals("OneToMany")) {
+                    relationField.set(entity, fetchById(relationField.getType(), (Integer) rs.getObject(relationField.getAnnotation(JoinColumn.class).name())));
                 }
             }
         }
+        rs.close();
     }
 
     private Integer completeSave(Object entity) throws IllegalAccessException, SQLException {
@@ -221,9 +172,6 @@ public class ObjectMapper {
         if (idField.get(entity) == null) idField.set(entity, 0);
         if (Integer.parseInt(idField.get(entity).toString()) != 0) return (Integer) idField.get(entity);
 
-        StringBuilder sql = new StringBuilder("INSERT INTO ").append(metadata.getTableName()).append(" (");
-        StringBuilder values = new StringBuilder(" VALUES (");
-        List<Object> params = new ArrayList<>();
         Map<Object, Field> mtm = new HashMap<>();
         Map<String, Integer> relationFields = new HashMap<>();
 
@@ -236,33 +184,7 @@ public class ObjectMapper {
             } else mapRelations(entity, mtm, relationField);
         }
 
-        for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
-            sql.append(columnEntry.getKey()).append(",");
-            values.append("?,");
-            Field field = getField(clazz, columnEntry.getValue());
-            if (field == null) continue;
-            field.setAccessible(true);
-            params.add(field.get(entity));
-        }
-
-        for (Map.Entry<String, Integer> rel : relationFields.entrySet()) {
-            values.append("?,");
-            sql.append(rel.getKey()).append(",");
-            params.add(rel.getValue());
-        }
-
-        sql.setLength(sql.length() - 1); // Remove trailing comma
-        values.setLength(values.length() - 1); // Remove trailing comma
-        sql.append(")").append(values).append(")");
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS)) {
-            Application.logger.info(ObjectMapper.class, sql.toString());
-            for (int i = 0; i < params.size(); i++) {
-                stmt.setObject(i + 1, params.get(i));
-            }
-            stmt.executeUpdate();
-            saveGeneratedKeys(entity, idField, stmt);
-        }
+        saveGeneratedKeys(entity, idField, sqlService.save(metadata, clazz, entity, relationFields));
 
         for (Map.Entry<Object, Field> m : mtm.entrySet()) {
             relationMapper.saveAllRelations(idField.get(entity).toString(), m.getKey(), m.getValue());
@@ -298,6 +220,7 @@ public class ObjectMapper {
     }
 
     private void saveGeneratedKeys(Object entity, Field idField, PreparedStatement stmt) {
+        if (stmt == null) return;
         try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
             if (generatedKeys.next()) {
                 idField.setAccessible(true);
