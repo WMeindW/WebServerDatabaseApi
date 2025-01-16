@@ -5,6 +5,7 @@ import cz.meind.logger.Logger;
 import cz.meind.service.Console;
 import cz.meind.service.mapper.ObjectMapper;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -73,19 +74,17 @@ public class Application {
     private static void initializeConfig(String[] args) {
         if (args.length > 0 && args[0] != null) configFilePath = args[0];
         Properties properties = new Properties();
+        File configFile = new File(configFilePath);
+        if (!configFile.exists()) return;
         try {
             properties.load(new FileInputStream(configFilePath));
-        } catch (IOException e) {
-            Application.logger.error(Application.class, e);
-        }
-        try {
             logFilePath = properties.getProperty("log.file.path");
             dbUrl = properties.getProperty("database.url");
             dbUser = properties.getProperty("database.user");
             dbPassword = properties.getProperty("database.password");
             Application.logger.info(Application.class, "Found config at " + configFilePath);
             Application.logger.info(Application.class, properties.toString());
-        } catch (Exception e) {
+        } catch (IOException e) {
             Application.logger.error(Application.class, e);
         }
     }
