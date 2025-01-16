@@ -3,6 +3,7 @@ package cz.meind.service.mapper;
 import cz.meind.application.Application;
 import cz.meind.database.EntityMetadata;
 import cz.meind.interfaces.Column;
+import cz.meind.service.Console;
 import org.apache.commons.csv.CSVRecord;
 
 import java.lang.reflect.Field;
@@ -17,6 +18,10 @@ public class SqlService {
     private final Connection connection;
 
     public SqlService(Connection connection) {
+        if (connection == null) {
+            Application.logger.error(SqlService.class,"No database connection.");
+            Console.exit();
+        }
         this.connection = connection;
     }
 

@@ -315,10 +315,10 @@ public class Console {
         Actions.importFile(scanner.next().strip());
     }
 
-    private static void exit() {
+    public static void exit() {
         scanner.close();
-        Application.logger.info(Console.class, "Exit");
         Application.database.closeConnection();
+        Application.logger.info(Console.class, "Shutting down.");
         System.exit(0);
     }
 }

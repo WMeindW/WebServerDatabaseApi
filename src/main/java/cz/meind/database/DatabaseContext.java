@@ -29,7 +29,7 @@ public class DatabaseContext {
     }
 
     public void closeConnection() {
-        Application.logger.info(DatabaseContext.class,"Closing connection");
+        Application.logger.info(DatabaseContext.class,"Closing connection.");
 
         try {
             if (connection != null && !connection.isClosed()) {
