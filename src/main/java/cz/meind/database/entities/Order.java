@@ -32,7 +32,7 @@ public class Order {
     @JoinColumn(name = "order_id")
     private List<Payment> payment;
 
-    public List<Payment> getPayment() {
+    public List<Payment> getPayments() {
         return payment;
     }
 
