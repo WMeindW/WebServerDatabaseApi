@@ -293,9 +293,8 @@ public class Console {
         System.out.println("Change: " + amount);
         Actions.savePayments(payments);
         Actions.payTransaction(cart);
-        currentCustomer = Actions.getCustomerById(currentCustomer.getId());
-        initCart();
         System.out.println("Payment successful!");
+        cart = cart.stream().filter(order -> order.getStatus().equals("new")).toList();
     }
 
     private static void logout() {
