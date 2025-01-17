@@ -18,3 +18,8 @@
 - navigate to installation directory
 - ``java -jar App.jar [config file path]``
 - default config location: ``java -jar App.jar application.properties``
+
+## Sources
+- [JavaRush](https://javarush.com/en/groups/posts/en.1896.java-annotations-what-is-it-and-how-to-use-it)
+- [JavaTPoint](https://www.javatpoint.com/java-annotation)
+- [MartinFowler](https://martinfowler.com/eaaCatalog/dataMapper.html)
