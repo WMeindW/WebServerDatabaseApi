@@ -314,4 +314,3 @@ public class Console {
         System.exit(0);
     }
 }
-
