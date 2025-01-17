@@ -3,7 +3,8 @@
 ## Installation
 - [Install link](https://daniellinda.net/App.zip)
 - unzip
-- configure
+- config should be already present in the installation folder
+- if config does not exist then create one and configure
 
 ## Configure application.properties
 - example configuration:
@@ -13,4 +14,6 @@
   - ``database.password=[password]``
 
 ## Startup
-- ``java -jar App.jar [config file path]``
+- navigate to directory
+- execute ``java -jar App.jar [config file path]``
+- example ``java -jar App.jar application.properties``
