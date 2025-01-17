@@ -3,6 +3,8 @@ package cz.meind.service.mapper;
 import cz.meind.application.Application;
 import cz.meind.database.EntityMetadata;
 import cz.meind.interfaces.Column;
+import cz.meind.service.Console;
+import org.apache.commons.csv.CSVRecord;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -16,6 +18,10 @@ public class SqlService {
     private final Connection connection;
 
     public SqlService(Connection connection) {
+        if (connection == null) {
+            Application.logger.error(SqlService.class,"No database connection.");
+            Console.exit();
+        }
         this.connection = connection;
     }
 
@@ -114,19 +120,50 @@ public class SqlService {
             params.add(rel.getValue());
         }
 
-        sql.setLength(sql.length() - 1); // Remove trailing comma
-        values.setLength(values.length() - 1); // Remove trailing comma
-        sql.append(")").append(values).append(")");
         try {
-            PreparedStatement stmt = connection.prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS);
-            Application.logger.info(SqlService.class, sql.toString());
-            for (int i = 0; i < params.size(); i++) {
-                stmt.setObject(i + 1, params.get(i));
-            }
-            stmt.executeUpdate();
-            return stmt;
+            return executeSaveStatement(sql, values, params);
         } catch (SQLException e) {
             Application.logger.error(SqlService.class, e);
-        } return null;
+            return null;
+        }
+    }
+
+    public void save(EntityMetadata metadata, Class<?> clazz, CSVRecord record) throws SQLException {
+        StringBuilder sql = new StringBuilder("INSERT INTO ").append(metadata.getTableName()).append(" (");
+        StringBuilder values = new StringBuilder(" VALUES (");
+        List<Object> params = new ArrayList<>();
+
+        for (Map.Entry<String, String> columnEntry : metadata.getColumns().entrySet()) {
+            Field field = getField(clazz, columnEntry.getValue());
+            if (field == null || field.getAnnotation(Column.class).id()) continue;
+            try {
+                String value = record.get(columnEntry.getKey());
+                if (value != null) {
+                    params.add(value);
+                    sql.append(columnEntry.getKey()).append(",");
+                    values.append("?,");
+                }
+            } catch (Exception e) {
+                Application.logger.error(SqlService.class, "Wrong mapping for: " + columnEntry.getKey());
+            }
+        }
+        if (params.isEmpty()) {
+            Application.logger.error(SqlService.class, new SQLException("No acceptable columns in file"));
+            return;
+        }
+        executeSaveStatement(sql, values, params).close();
+    }
+
+    private PreparedStatement executeSaveStatement(StringBuilder sql, StringBuilder values, List<Object> params) throws SQLException {
+        sql.setLength(sql.length() - 1);
+        values.setLength(values.length() - 1);
+        sql.append(")").append(values).append(")");
+        PreparedStatement stmt = connection.prepareStatement(sql.toString(), Statement.RETURN_GENERATED_KEYS);
+        Application.logger.info(SqlService.class, sql.toString());
+        for (int i = 0; i < params.size(); i++) {
+            stmt.setObject(i + 1, params.get(i));
+        }
+        stmt.executeUpdate();
+        return stmt;
     }
 }

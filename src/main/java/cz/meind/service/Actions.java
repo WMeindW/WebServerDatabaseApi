@@ -5,7 +5,14 @@ import cz.meind.database.entities.Customer;
 import cz.meind.database.entities.Order;
 import cz.meind.database.entities.Payment;
 import cz.meind.database.entities.Product;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
@@ -75,6 +82,21 @@ public class Actions {
 
     public static Customer getCustomerById(Integer id) {
         return mapper.fetchById(Customer.class, id);
+    }
+
+    public static void importFile(String path) {
+
+        try {
+            File file = new File(path);
+            if (!file.exists()) {
+                System.err.println("File not found: " + path);
+                return;
+            }
+            mapper.addCsv(CSVFormat.DEFAULT.withHeader().parse(new FileReader(file, StandardCharsets.UTF_8)).getRecords(), Product.class);
+        } catch (Exception e) {
+            Application.logger.error(Actions.class, e);
+        }
+
     }
 
     private static void revert(List<?> objects) {

@@ -42,6 +42,7 @@ public class Console {
                 
                 [0] Login
                 [1] Signup
+                [2] Import products (.csv)
                 [Exit] Exit
                 
                 Command:""";
@@ -77,6 +78,20 @@ public class Console {
                 Enter product id to add to cart:""";
     }
 
+    private static String printCart() {
+        StringBuilder sb = new StringBuilder();
+        for (Order order : cart) {
+            sb.append("Order #").append(order.getId()).append(" - ").append(order.getOrderDate()).append(" - Payments: ").append(order.getPayments().size()).append("\n");
+            sb.append("Products:\n");
+            for (Product product : order.getProducts()) {
+                sb.append("[").append(product.getId()).append("]").append(product.getName()).append(" - ").append(product.getPrice()).append(" Kč\n");
+            }
+            sb.append("Remaining Price: ").append(order.getTotalPrice()).append(" Kč\n");
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
     private static void execute(String command) {
         if (command.equalsIgnoreCase("exit")) exit();
         int choice;
@@ -93,6 +108,9 @@ public class Console {
                     break;
                 case 1:
                     signup();
+                    break;
+                case 2:
+                    importData();
                     break;
                 default:
                     System.err.println("Invalid command, number out of range.");
@@ -218,20 +236,6 @@ public class Console {
         cart = new ArrayList<>(currentCustomer.getOrders().stream().filter(order -> order.getStatus().equals("new")).toList());
     }
 
-    private static String printCart() {
-        StringBuilder sb = new StringBuilder();
-        for (Order order : cart) {
-            sb.append("Order #").append(order.getId()).append(" - ").append(order.getOrderDate()).append("\n");
-            sb.append("Products:\n");
-            for (Product product : order.getProducts()) {
-                sb.append("[").append(product.getId()).append("]").append(product.getName()).append(" - ").append(product.getPrice()).append(" Kč\n");
-            }
-            sb.append("Total Price: ").append(order.getTotalPrice()).append(" Kč\n");
-            sb.append("\n");
-        }
-        return sb.toString();
-    }
-
     private static void payCreditCard() {
         String cardNumber;
         String expiryDate;
@@ -272,7 +276,7 @@ public class Console {
             if (o.getTotalPrice() >= amount) {
                 Payment p = new Payment(expiryDate, cardNumber, cvv, cardHolderName, amount);
                 p.setOrder(o);
-                o.getPayment().add(p);
+                o.getPayments().add(p);
                 o.setTotalPrice(o.getTotalPrice() - amount);
                 payments.add(p);
                 amount = 0f;
@@ -280,7 +284,7 @@ public class Console {
                 Payment p = new Payment(expiryDate, cardNumber, cvv, cardHolderName, o.getTotalPrice());
                 amount = amount - o.getTotalPrice();
                 p.setOrder(o);
-                o.getPayment().add(p);
+                o.getPayments().add(p);
                 o.setStatus("completed");
                 payments.add(p);
                 o.setTotalPrice(0);
@@ -289,9 +293,8 @@ public class Console {
         System.out.println("Change: " + amount);
         Actions.savePayments(payments);
         Actions.payTransaction(cart);
-        currentCustomer = Actions.getCustomerById(currentCustomer.getId());
-        initCart();
         System.out.println("Payment successful!");
+        cart = cart.stream().filter(order -> order.getStatus().equals("new")).toList();
     }
 
     private static void logout() {
@@ -307,10 +310,15 @@ public class Console {
         System.out.println("Account deleted.");
     }
 
-    private static void exit() {
+    private static void importData() {
+        System.out.println("Set file path: ");
+        Actions.importFile(scanner.next().strip());
+    }
+
+    public static void exit() {
         scanner.close();
-        Application.logger.info(Console.class, "Exit");
         Application.database.closeConnection();
+        Application.logger.info(Console.class, "Shutting down.");
         System.exit(0);
     }
 }
