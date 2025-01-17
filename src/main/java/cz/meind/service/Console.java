@@ -19,6 +19,18 @@ public class Console {
     private static boolean inListing;
     private static boolean payment;
 
+    /**
+     * Runs the main console application loop.
+     * This method initializes the product list and continuously prompts the user for input
+     * based on their current state (logged in, in product listing, or in payment process).
+     * It then executes the appropriate action based on the user's input.
+     * <p>
+     * The loop continues indefinitely until the user chooses to exit the application.
+     * <p>
+     * No parameters are required for this method.
+     * <p>
+     * This method does not return any value as it runs continuously until program termination.
+     */
     public static void run() {
         products = Actions.getProducts();
         do {
@@ -37,6 +49,7 @@ public class Console {
         } while (true);
     }
 
+
     private static String printLogin() {
         return """
                 
@@ -47,6 +60,7 @@ public class Console {
                 
                 Command:""";
     }
+
 
     private static String printActions() {
         return """
@@ -92,6 +106,13 @@ public class Console {
         return sb.toString();
     }
 
+    /**
+     * Executes the appropriate action based on the user's input.
+     * This method handles different states of the application (logged in, in product listing, or in payment process)
+     * and performs the corresponding actions based on the user's choice.
+     *
+     * @param command The user's input command.
+     */
     private static void execute(String command) {
         if (command.equalsIgnoreCase("exit")) exit();
         int choice;
@@ -155,6 +176,15 @@ public class Console {
         }
     }
 
+    /**
+     * Adds a product to the shopping cart.
+     * If the product is not already in the cart, a new order is created and the product is added to it.
+     * If the product is already in the cart, it is added to the existing order.
+     *
+     * @param productId The unique identifier of the product to be added to the cart.
+     * @throws NullPointerException  If the product with the given productId does not exist in the product list.
+     * @throws IllegalStateException If the cart is null or empty.
+     */
     private static void addToCart(int productId) {
         Product p = products.stream().filter(pr -> pr.getId() == productId).findFirst().get();
         Order order = null;
@@ -180,6 +210,13 @@ public class Console {
         }
     }
 
+    /**
+     * Handles the login process for the console application.
+     * Prompts the user to enter their name, attempts to authenticate the user,
+     * and initializes the shopping cart for the logged-in customer.
+     *
+     * @throws NullPointerException If the customer with the given name does not exist in the database.
+     */
     private static void login() {
         System.out.print("Name: ");
         Customer c = Actions.login(scanner.next().strip().replace(" ", ""));
@@ -193,37 +230,76 @@ public class Console {
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
+    /**
+     * Handles the signup process for the console application.
+     * Prompts the user to enter their name, email, address, and phone number,
+     * validates the input, and attempts to create a new customer in the database.
+     * If the signup is successful, the customer is logged in, and the shopping cart is initialized.
+     *
+     * @throws NullPointerException If the customer with the given name does not exist in the database.
+     */
     private static void signup() {
         String name;
         String email;
         String address;
         String phone;
+
+        // Loop until valid signup information is provided
         do {
             System.out.print("Name:");
             name = scanner.nextLine().strip().replace(" ", "");
+
+            // Validate name length and format
             if (name.length() < 4 || name.length() > 8 || !name.matches("[a-zA-Z]*")) continue;
+
             System.out.print("Email: [*@*.*]");
             email = scanner.next().strip().replace(" ", "");
+
+            // Validate email length and format
             if (email.length() > 50 || !email.matches("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,6}")) continue;
+
             System.out.print("Address: ");
             address = scanner.next().strip().replace(" ", "");
+
+            // Validate address length
             if (address.length() < 4 || address.length() > 50) continue;
+
             System.out.print("Phone: ");
             phone = scanner.next().strip().replace(" ", "");
+
+            // Validate phone length and format
             if (phone.length() < 4 || phone.length() > 50 || !phone.matches("[+]*[0-9]*")) continue;
+
             break;
         } while (true);
+
+        // Attempt to create a new customer in the database
         Customer c = Actions.signup(name, email, address, phone);
+
+        // Handle invalid signup
         if (c == null) {
             System.err.println("Invalid signup.");
             return;
         }
+
+        // Set the current customer and update the login status
         currentCustomer = c;
         loggedIn = true;
+
+        // Initialize the shopping cart for the logged-in customer
         initCart();
+
+        // Display successful login message
         System.out.println("Logged in as: " + currentCustomer.getName());
     }
 
+        /**
+     * Displays the list of available products to the user.
+     * This function iterates through the product list and prints each product's ID, name, and price.
+     * It also sets the 'inListing' flag to true, indicating that the user is currently browsing the product list.
+     *
+     * @return void
+     */
     private static void viewProducts() {
         System.out.println("Available products:");
         for (Product product : products) {
